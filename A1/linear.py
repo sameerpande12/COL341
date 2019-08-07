@@ -2,6 +2,54 @@ import csv
 import numpy as np
 import sys
 
+
+def getLoss(x,y,w,l_type,lamda=0):
+    (n,m) = x.shape
+
+    if l_type == 'a':
+        y_xw = y - np.dot(x,w)
+        loss = (0.5/n)*np.sum( y_xw ** 2)
+        return loss
+    elif l_type == 'b':
+        y_xw = y - np.dot(x,w)
+        loss = (0.5/n)*np.sum( y_xw ** 2) + (0.5*lamda)* (np.sum(w**2))
+        return loss
+
+def cross_validate(x_train,y_train,lambdas,k):
+    fold_size = (int)(x_train.shape[0]/k)
+    accuracy = 0
+
+    avg_errors = []
+
+    for lamda in lambdas:
+        errors = []
+        for i in range(k):
+            x_train_k = np.concatenate((x_train[:(i*fold_size)],x_train[((i+1)*fold_size):]))
+            x_validate_k = x_train[i*fold_size : (i+1)*fold_size]
+
+            y_train_k = np.concatenate((y_train[:(i*fold_size)],y_train[((i+1)*fold_size):]))
+            y_validate_k = y_train[i*fold_size : (i+1)*fold_size]
+
+            w = trainB(x_train_k,y_train_k,lamda)
+
+            y_validate_pred = (np.dot(x_validate_k,w))
+            errors.append(getLoss(x_validate_k,y_validate_k,w,'b',lamda))
+
+        avg_errors.append( np.mean(np.array(errors)) )
+
+    # print(avg_errors)
+    index = avg_errors.index(min(avg_errors))
+    # optimum_lamda = lambdas[index]
+    return index
+
+def printList(arr,fname):
+    f = open(fname,'w+')
+    for val in arr:
+        f.write(str(val)+"\n")
+    f.close()
+
+
+
 mode = sys.argv[1]
 
 if mode == 'a':
@@ -24,8 +72,6 @@ elif mode == 'c':
     trainfile = sys.argv[2]
     testfile = sys.argv[3]
     outputfile = sys.argv[4]
-
-
 
 x_train=[]
 x_test=[]
@@ -60,17 +106,6 @@ x_train = np.append(ones,x_train,axis=1)
 ones = np.ones((x_test.shape[0],1))
 x_test = np.append(ones,x_test,axis=1)
 
-def getLoss(x,y,w,l_type):
-    (n,m) = x.shape
-
-    if l_type == 'a':
-        y_xw = y - np.dot(x,w)
-        loss = (0.5/n)*np.sum( y_xw ** 2)
-        return loss
-    elif l_type == 'b':
-        y_xw = y - np.dot(x,w)
-        loss = (0.5/n)*np.sum( y_xw ** 2) + (0.5*lamda)* (np.sum(w**2))
-        return loss
 
 if mode == 'a':
     def trainA(x_train,y_train):
@@ -81,14 +116,8 @@ if mode == 'a':
     w = trainA(x_train,y_train)
     # y_test_pred = (np.round(np.dot(x_test,w))).astype('int64')
     y_test_pred = np.dot(x_test,w)
-    f = open(outputfile,'w+')
-    for yval in y_test_pred:
-        f.write(str(yval)+"\n")
-    f.close()
-    f = open(weightfile,'w+')
-    for weight in w:
-        f.write(str(weight)+"\n")
-    f.close()
+    printList(y_test_pred,outputfile)
+    printList(w,weightfile)
 
 
 
@@ -111,49 +140,14 @@ if mode == 'b':
 
     # lambdas = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000]
     k = 10
-    fold_size = (int)(x_train.shape[0]/k)
-    accuracy = 0
-
-    avg_errors = []
-
-    for lamda in lambdas:
-        errors = []
-        for i in range(k):
-            x_train_k = np.concatenate((x_train[:(i*fold_size)],x_train[((i+1)*fold_size):]))
-            x_validate_k = x_train[i*fold_size : (i+1)*fold_size]
-
-            y_train_k = np.concatenate((y_train[:(i*fold_size)],y_train[((i+1)*fold_size):]))
-            y_validate_k = y_train[i*fold_size : (i+1)*fold_size]
-
-            w = trainB(x_train_k,y_train_k,lamda)
-
-            y_validate_pred = (np.dot(x_validate_k,w))
-            errors.append(getLoss(x_validate_k,y_validate_k,w,'b'))
-
-        avg_errors.append( np.mean(np.array(errors)) )
-
-    # print(avg_errors)
-    index = avg_errors.index(min(avg_errors))
+    index = cross_validate(x_train,y_train,lambdas,k)
     optimum_lamda = lambdas[index]
     print(str(optimum_lamda))
 
-    # print(avg_errors[index])
-    # print("optimum lambda "+str(optimum_lamda))
-    # x_train_k = np.concatenate((x_train[:(index*fold_size)],x_train[((index+1)*fold_size):]))
-    # y_train_k = np.concatenate((y_train[:(index*fold_size)],y_train[((index+1)*fold_size):]))
-    # w = trainB(x_train_k,y_train_k,optimum_lamda)
     w = trainB(x_train,y_train,optimum_lamda)
-
     y_test_pred = (np.dot(x_test,w))
-    f = open(outputfile,'w+')
-    for yval in y_test_pred:
-        f.write(str(yval)+"\n")
-    f.close()
-
-    f = open(weightfile,'w+')
-    for weight in w:
-        f.write(str(weight)+"\n")
-    f.close()
+    printList(y_test_pred,outputfile)
+    printList(w,weightfile)
 
 
 if mode == 'c':
@@ -164,10 +158,7 @@ if mode == 'c':
 
     w = trainC(x_train,y_train)
     y_test_pred = (np.round(np.dot(x_test,w))).astype('int64')
-    f = open(outputfile,'w+')
-    for yval in y_test_pred:
-        f.write(str(yval)+"\n")
-    f.close()
+    printList(y_test_pred,outputfile)
 
 
 # f = open("y_train.csv",'w+')
