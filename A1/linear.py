@@ -19,6 +19,14 @@ elif mode == 'b':
     weightfile = sys.argv[6]
 
 
+elif mode == 'c':
+
+    trainfile = sys.argv[2]
+    testfile = sys.argv[3]
+    outputfile = sys.argv[4]
+
+
+
 x_train=[]
 x_test=[]
 y_train=[]
@@ -71,7 +79,8 @@ if mode == 'a':
         return w
 
     w = trainA(x_train,y_train)
-    y_test_pred = (np.round(np.dot(x_test,w))).astype('int64')
+    # y_test_pred = (np.round(np.dot(x_test,w))).astype('int64')
+    y_test_pred = np.dot(x_test,w)
     f = open(outputfile,'w+')
     for yval in y_test_pred:
         f.write(str(yval)+"\n")
@@ -88,7 +97,7 @@ if mode == 'b':
         n = x_train.shape[0]
         m = x_train.shape[1]
         xTx = np.dot(x_train.transpose(),x_train)
-        invTerm = np.linalg.pinv( (1.0/n) * xTx + lamda* np.identity(m))
+        invTerm = np.linalg.pinv( (1.0/n) * xTx + (1.0/n) *lamda* np.identity(m))
         xTy = np.dot(x_train.transpose(),y_train)
         w = (1.0/n) * np.dot(invTerm,xTy)
         return w
@@ -97,7 +106,8 @@ if mode == 'b':
     with open(regularization_file,'r') as filename:
         csvreader = csv.reader(filename)
         for row in csvreader:
-            lambdas.append( float( row[0]))
+            if(len(row)>0):
+                lambdas.append( float( row[0]))
 
     # lambdas = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000]
     k = 10
@@ -108,7 +118,7 @@ if mode == 'b':
 
     for lamda in lambdas:
         errors = []
-        for i in range(10):
+        for i in range(k):
             x_train_k = np.concatenate((x_train[:(i*fold_size)],x_train[((i+1)*fold_size):]))
             x_validate_k = x_train[i*fold_size : (i+1)*fold_size]
 
@@ -131,7 +141,7 @@ if mode == 'b':
     # print("optimum lambda "+str(optimum_lamda))
     w = trainB(x_train,y_train,optimum_lamda)
 
-    y_test_pred = (np.round(np.dot(x_test,w))).astype('int64')
+    y_test_pred = (np.dot(x_test,w))
     f = open(outputfile,'w+')
     for yval in y_test_pred:
         f.write(str(yval)+"\n")
@@ -143,6 +153,18 @@ if mode == 'b':
     f.close()
 
 
+if mode == 'c':
+    def trainC(x_train,y_train):
+        xTx = np.dot(x_train.transpose(),x_train)
+        w = np.dot(np.dot(np.linalg.pinv(xTx), x_train.transpose()),y_train)
+        return w
+
+    w = trainC(x_train,y_train)
+    y_test_pred = (np.round(np.dot(x_test,w))).astype('int64')
+    f = open(outputfile,'w+')
+    for yval in y_test_pred:
+        f.write(str(yval)+"\n")
+    f.close()
 
 
 # f = open("y_train.csv",'w+')
