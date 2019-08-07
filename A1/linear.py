@@ -127,7 +127,7 @@ if mode == 'b':
 
             w = trainB(x_train_k,y_train_k,lamda)
 
-            y_validate_pred = np.round(np.dot(x_validate_k,w))
+            y_validate_pred = (np.dot(x_validate_k,w))
             errors.append(getLoss(x_validate_k,y_validate_k,w,'b'))
 
         avg_errors.append( np.mean(np.array(errors)) )
@@ -139,7 +139,9 @@ if mode == 'b':
 
     # print(avg_errors[index])
     # print("optimum lambda "+str(optimum_lamda))
-    w = trainB(x_train,y_train,optimum_lamda)
+    x_train_k = np.concatenate((x_train[:(index*fold_size)],x_train[((index+1)*fold_size):]))
+    y_train_k = np.concatenate((y_train[:(index*fold_size)],y_train[((index+1)*fold_size):]))
+    w = trainB(x_train_k,y_train_k,optimum_lamda)
 
     y_test_pred = (np.dot(x_test,w))
     f = open(outputfile,'w+')
