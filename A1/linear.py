@@ -1,15 +1,23 @@
 import csv
 import numpy as np
-#
-# mode = sys.argv[1]
-# trainfile = sys.argv[2]
-# testfile = sys.argv[3]
-# output = sys.argv[4]
-# weightfile = sys.argv[5]
-trainfile = 'train.csv'
-testfile ='test_X.csv'
-outputfile = 'output.csv'
-mode = 'b'
+import sys
+
+mode = sys.argv[1]
+
+if mode == 'a':
+
+    trainfile = sys.argv[2]
+    testfile = sys.argv[3]
+    outputfile = sys.argv[4]
+    weightfile = sys.argv[5]
+
+elif mode == 'b':
+    trainfile = sys.argv[2]
+    testfile = sys.argv[3]
+    regularization_file = sys.argv[4]
+    outputfile = sys.argv[5]
+    weightfile = sys.argv[6]
+
 
 x_train=[]
 x_test=[]
@@ -68,6 +76,11 @@ if mode == 'a':
     for yval in y_test_pred:
         f.write(str(yval)+"\n")
     f.close()
+    f = open(weightfile,'w+')
+    for weight in w:
+        f.write(str(weight)+"\n")
+    f.close()
+
 
 
 if mode == 'b':
@@ -80,8 +93,13 @@ if mode == 'b':
         w = (1.0/n) * np.dot(invTerm,xTy)
         return w
 
+    lambdas = []
+    with open(regularization_file,'r') as filename:
+        csvreader = csv.reader(filename)
+        for row in csvreader:
+            lambdas.append( float( row[0]))
 
-    lambdas = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000]
+    # lambdas = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000]
     k = 10
     fold_size = (int)(x_train.shape[0]/k)
     accuracy = 0
@@ -107,6 +125,9 @@ if mode == 'b':
     # print(avg_errors)
     index = avg_errors.index(min(avg_errors))
     optimum_lamda = lambdas[index]
+    print(str(optimum_lamda))
+
+    # print(avg_errors[index])
     # print("optimum lambda "+str(optimum_lamda))
     w = trainB(x_train,y_train,optimum_lamda)
 
@@ -115,6 +136,12 @@ if mode == 'b':
     for yval in y_test_pred:
         f.write(str(yval)+"\n")
     f.close()
+
+    f = open(weightfile,'w+')
+    for weight in w:
+        f.write(str(weight)+"\n")
+    f.close()
+
 
 
 
