@@ -225,6 +225,16 @@ if mode == 'c':
             column = np.transpose(column)
             x_test_primary = np.append(x_test_primary, column ,axis=1)
 
+    for i in range(num_primary):
+        column = np.array([(np.abs(x_train_primary[:,i]))**0.5])
+        column = np.transpose(column)
+        x_train_primary = np.append(x_train_primary,column ,axis=1)
+
+    for i in range(num_primary):
+        column = np.array([(np.abs(x_test_primary[:,i]))**0.5])
+        column = np.transpose(column)
+        x_test_primary = np.append(x_test_primary,column ,axis=1)
+
     reg = linear_model.LassoLars(alpha = alpha)
     reg = reg.fit(x_train_primary,y_train)
 
@@ -233,6 +243,28 @@ if mode == 'c':
     x_train_primary = x_train_primary[:,active_cols]
     x_test_primary = x_test_primary[:,active_cols]
 
+
+
+    for i in range(num_primary):
+        for j in range(num_primary-i):
+            column = np.array([x_train_primary[:,i] * x_train_primary[:,i+j]])
+            column = np.transpose(column)
+            x_train_primary = np.append(x_train_primary, column ,axis=1)
+
+    for i in range(num_primary):
+        for j in range(num_primary-i):
+            column = np.array([x_test_primary[:,i] * x_test_primary[:,i+j]])
+            column = np.transpose(column)
+            x_test_primary = np.append(x_test_primary, column ,axis=1)
+
+
+    reg = linear_model.LassoLars(alpha = alpha)
+    reg = reg.fit(x_train_primary,y_train)
+
+    active_cols = reg.active_
+
+    x_train_primary = x_train_primary[:,active_cols]
+    x_test_primary = x_test_primary[:,active_cols]
 
     reg = linear_model.LassoLars(alpha = alpha)
     reg = reg.fit(x_train_primary,y_train)
