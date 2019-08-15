@@ -11,22 +11,26 @@ trainfile = "train.csv"
 
 
 
-def predict(X,Y,W):
+def predict(X,W):
     h_matrix = np.exp(np.dot(X,W))
-    h_matrix = h_matrix/(np.sum(h_matrix,axis=1))
+    #print(h_matrix.shape)
+    z = np.sum(h_matrix,axis=1)
+    z = z.reshape(z.shape[0],1)
+    h_matrix = h_matrix/z
     return h_matrix
 
 def getLoss(X,Y,W):
-    y_pred = predict(X,Y,W)
-    y_pred = np.log(y_pred)
+    y_pred = predict(X,W)
+    y_pred = -np.log(y_pred)
     loss = (1.0/2*X.shape[0])*np.sum( y_pred * Y )
+    return loss
 
 
 def sgd(X,Y,W,alpha,num_iters):#alpha is learning rate
     x_transpose = np.transpose(X)
     for i in range(num_iters):
         j = i%(W.shape[1])
-        y_pred = predict(X,Y,W)
+        y_pred = predict(X,W)
         W[:,j] = W[:,j] + alpha/(2.0*X.shape[0]) * np.dot(x_transpose, (Y[:,j] - y_pred[:,j]))
         print("iteration: {}, Loss: {}".format(i+1,getLoss(X,Y,W)))
     return W
@@ -38,8 +42,6 @@ class one_hot_encoder:
         self.labels_arr = []
         for i in range(x.shape[1]):
             self.labels_arr.append(np.unique(x[:,i]))
-#        print(len(self.labels_arr))
-#        print("Done creating encoder")
 
 
     def encode(self,x_input):
@@ -48,7 +50,7 @@ class one_hot_encoder:
 
         for i in range(len(self.labels_arr)):
             for label in self.labels_arr[i]:
-                #print(i)
+             
                 x_output.append((x_input[:,i]==label).astype(np.float64))
 
         x_output = np.transpose(np.array(x_output))
@@ -82,4 +84,4 @@ x_train = np.append(ones,x_train,axis=1)
 w = np.random.random([x_train.shape[1],y_train.shape[1]])
 
 w = sgd(x_train,y_train,w,0.1,1000)
-print(w)
+#print(w)
