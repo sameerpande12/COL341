@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 import sys
-
+from scipy import special
 # trainfile=sys.argv[2]
 # testfile = sys.argv[3]
 # paramfile = sys.argv[4]
@@ -13,16 +13,16 @@ trainfile = "train.csv"
 
 def predict(X,W):
     h_matrix = np.exp(np.dot(X,W))
-    #print(h_matrix.shape)
-    z = np.sum(h_matrix,axis=1)
-    z = z.reshape(z.shape[0],1)
-    h_matrix = h_matrix/z
+    col = np.sum(h_matrix,axis=1)
+    col = col.reshape(col.shape[0],1)
+    h_matrix = h_matrix/col
+    #h_matrix = special.softmax(np.dot(X,W))
     return h_matrix
 
 def getLoss(X,Y,W):
     y_pred = predict(X,W)
     y_pred = -np.log(y_pred)
-    loss = (1.0/2*X.shape[0])*np.sum( y_pred * Y )
+    loss = (1.0/(2*X.shape[0]))*np.sum( y_pred * Y )
     return loss
 
 
@@ -33,6 +33,14 @@ def sgd(X,Y,W,alpha,num_iters):#alpha is learning rate
         y_pred = predict(X,W)
         W[:,j] = W[:,j] + alpha/(2.0*X.shape[0]) * np.dot(x_transpose, (Y[:,j] - y_pred[:,j]))
         print("iteration: {}, Loss: {}".format(i+1,getLoss(X,Y,W)))
+    return W    
+    #for i in range(num_iters):
+    #    print("iteration: {}, Loss: {}".format(i,getLoss(X,Y,W)))
+    #    j = i%(W.shape[0])
+    #    y_pred = predict(X,W)
+    #    W[j,:] = W[j,:] + alpha/(2.0*X.shape[0]) * np.dot(y_transpose-y_pred.T, X[:,j])
+
+    
     return W
 
 
@@ -81,7 +89,14 @@ ones = np.ones((x_train.shape[0],1))
 x_train = np.append(ones,x_train,axis=1)
 
 
-w = np.random.random([x_train.shape[1],y_train.shape[1]])
+w = np.random.random([x_train.shape[1],y_train.shape[1]])* np.sqrt(2)/(x_train.shape[1]*y_train.shape[1])
 
-w = sgd(x_train,y_train,w,0.1,1000)
+w = sgd(x_train,y_train,w,1,100000)
 #print(w)
+
+
+#for i in range(num_iters):
+    #    print("iteration: {}, Loss: {}".format(i,getLoss(X,Y,W)))
+    #    j = i%(W.shape[0])
+    #    y_pred = predict(X,W)
+    #    W[j,:] = W[j,:] + alpha/(2.0*X.shape[0]) * np.dot(y_transpose-y_pred.T, X[:,j])
