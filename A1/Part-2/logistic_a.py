@@ -2,12 +2,12 @@ import csv
 import numpy as np
 import sys
 #from scipy import special
-trainfile=sys.argv[2]
-testfile = sys.argv[3]
-paramfile = sys.argv[4]
-outputfile = sys.argv[5]
-weightfile = sys.argv[6]
-#trainfile = "train.csv"
+#trainfile=sys.argv[2]
+#testfile = sys.argv[3]
+#paramfile = sys.argv[4]
+#outputfile = sys.argv[5]
+#weightfile = sys.argv[6]
+trainfile = "train.csv"
 
 
 
@@ -25,16 +25,18 @@ def getLoss(X,Y,W):
     loss = (1.0/(2*X.shape[0]))*np.sum( y_pred * Y )
     return loss
 
-def gradient_col(X,Y,W,col_no):
-    y_pred_col = np.dot(X,W[:,col_no])
-    return np.dot(X.T,y_pred_col-Y[:,col_no])
+#def gradient_col(X,Y,W,col_no):
+#    y_pred_col = np.dot(X,W[:,col_no])
+#    return np.dot(X.T,y_pred_col-Y[:,j])
 
 def sgd(X,Y,W,alpha,num_iters):#alpha is learning rate
     x_transpose = np.transpose(X)
     for i in range(num_iters):
         j = i%(W.shape[1])
         y_pred = predict(X,W)
-        W[:,j] = W[:,j] + alpha/(2.0*X.shape[0]) * np.dot(x_transpose, (Y[:,j] - y_pred[:,j]))
+        gradient = -np.dot(x_transpose, (Y[:,j] - y_pred[:,j]))
+        direction = -gradient/np.sqrt((np.sum(gradient**2)))
+        W[:,j] = W[:,j] - alpha/(2.0*X.shape[0]) *gradient
         print("iteration: {}, Loss: {}".format(i+1,getLoss(X,Y,W)))
     return W
     #y_transpose = np.transpose(Y)    
@@ -101,7 +103,7 @@ x_train = np.append(ones,x_train,axis=1)
 
 w = np.random.random([x_train.shape[1],y_train.shape[1]])* np.sqrt(2)/(x_train.shape[1]*y_train.shape[1])
 
-#w = sgd(x_train,y_train,w,5,1000)
+w = sgd(x_train,y_train,w,5,1000)
 #print(w)
 
 
