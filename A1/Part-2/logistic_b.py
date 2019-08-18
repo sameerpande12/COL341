@@ -32,7 +32,7 @@ def getLoss(X,Y,W):
 #    y_pred_col = np.dot(X,W[:,col_no])
 #    return np.dot(X.T,y_pred_col-Y[:,j])
 
-def sgd(X,Y,W,args):#learning_rate is learning rate
+def batch_sgd(X,Y,W,args):#learning_rate is learning rate
     if(args[0]==1):
         learning_rate = args[1]
 
@@ -46,34 +46,35 @@ def sgd(X,Y,W,args):#learning_rate is learning rate
         beta = args[1][2]
 
     num_iters = (int)(args[2])
-    x_transpose = np.transpose(X)
-
+    batch_size = (int)(args[3])
+    num_batches = (int)(X.shape[0]/batch_size)
+    if(num_batches * batch_size < X.shape[0]):
+        num_batches += 1
+        
     for i in range(num_iters):
-        #j = i%(W.shape[1])
-        #print(i+1)
-        y_pred = predict(X,W)
-
-        gradient = -np.dot(x_transpose, (Y - y_pred))/(X.shape[0])
         
+        for iterator in range(num_batches):
+            x = X[(iterator * batch_size):((iterator+1)*batch_size),:]
+            y = Y[(iterator * batch_size):((iterator+1)*batch_size),:]
         
-        
-        if(args[0]==3):
-            magnitude = np.sqrt(np.sum(gradient**2))
-            direction = -gradient/magnitude
-            loss = getLoss(X,Y,W)
-            while True:
-                diff = getLoss(X,Y,W+learning_rate*direction) - loss
-                if diff > learning_rate * alpha * magnitude:
-                    learning_rate = learning_rate * beta
-                    #print("     {}".format(learning_rate))
-                else:
-                    break
+            y_pred = predict(x,W)
+            gradient = -np.dot(x.T, (y - y_pred))/(x.shape[0])
+            if(args[0]==3):
+                magnitude = np.sqrt(np.sum(gradient**2))
+                direction = -gradient/magnitude
+                loss = getLoss(x,y,W)
+                while True:
+                    diff = getLoss(x,y,W+learning_rate*direction) - loss
+                    if diff > learning_rate * alpha * magnitude:
+                        learning_rate = learning_rate * beta
+                    else:
+                        break
+                    
                 
+            W = W - learning_rate *gradient
             
-        W = W - learning_rate *gradient
-        
-        if(args[0]==2):
-            learning_rate = learning_rate/np.sqrt(seed)
+            if(args[0]==2):
+                learning_rate = learning_rate/np.sqrt(seed)
         
     return W
     
@@ -116,17 +117,17 @@ if parameters[0][0]==2.0:
     arguments.append(parameters[0][0])
     arguments.append([parameters[1][0],parameters[1][1]])
     arguments.append(parameters[2][0])
-    arguments.append((int)(parameters[3][0]))
+    arguments.append(parameters[3][0])
 elif parameters[0][0]==1.0:
     arguments.append(parameters[0][0])
     arguments.append(parameters[1][0])
     arguments.append(parameters[2][0])
-    arguments.append((int)(parameters[3][0]))
+    arguments.append(parameters[3][0])
 elif parameters[0][0]==3.0:
     arguments.append(parameters[0][0])
     arguments.append([parameters[1][0],parameters[1][1],parameters[1][2]])
     arguments.append(parameters[2][0])
-    arguments.append((int)(parameters[3][0]))
+    arguments.append(parameters[3][0])
 
 x_train = []
 with open(trainfile,'r') as filename:
@@ -174,7 +175,7 @@ x_test = np.append(ones,x_test,axis=1)
 
 w = np.random.random([x_train.shape[1],y_train.shape[1]])* np.sqrt(2)/(x_train.shape[1]*y_train.shape[1])
 
-w = sgd(x_train,y_train,w,arguments)
+w = batch_sgd(x_train,y_train,w,arguments)
 
 
 y_test_output = output_encoder.decode(predict(x_test,w))
