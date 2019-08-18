@@ -48,31 +48,32 @@ def sgd(X,Y,W,args):#learning_rate is learning rate
     num_iters = (int)(args[2])
     x_transpose = np.transpose(X)
 
-    loss_val = -1
     for i in range(num_iters):
-        j = i%(W.shape[1])
+        #j = i%(W.shape[1])
         y_pred = predict(X,W)
 
-        gradient = -np.dot(x_transpose, (Y[:,j] - y_pred[:,j]))
-        prev_loss = loss_val
-        W[:,j] = W[:,j] - learning_rate/(1.0*X.shape[0]) *gradient
-        loss_val = getLoss(X,Y,W)
+        gradient = -np.dot(x_transpose, (Y - y_pred))/(X.shape[0])
+        
+        
+        
+        if(args[0]==3):
+            magnitude = np.sqrt(np.sum(gradient**2))
+            direction = -gradient/magnitude
+            loss = getLoss(X,Y,W)
+            while True:
+                diff = getLoss(X,Y,W+learning_rate*direction) - loss
+                if diff > learning_rate * alpha * magnitude:
+                    learning_rate = learning_rate * beta
+                else:
+                    break
+        
+        W = W - learning_rate *gradient
+        
         if(args[0]==2):
             learning_rate = learning_rate/np.sqrt(seed)
-        elif(args[0]==3):
-            direction = -gradient/np.sqrt((np.sum(gradient**2)))
-
-        #print("iteration: {}, Loss: {}".format(i+1,getLoss(X,Y,W)))
+        
     return W
-    #y_transpose = np.transpose(Y)
-    #for i in range(num_iters):
-       #print("iteration: {}, Loss: {}".format(i,getLoss(X,Y,W)))
-    #   j = i%(W.shape[0])
-    #   y_pred = predict(X,W)
-    #   W[j,:] = W[j,:] + learning_rate/(2.0*X.shape[0]) * np.dot(y_transpose-y_pred.T, X[:,j])
-
-
-    return W
+    
 
 
 class one_hot_encoder:
@@ -110,8 +111,8 @@ with open(paramfile,'r') as filename:
 arguments= []
 if parameters[0][0]==2.0:
     arguments.append(parameters[0][0])
-    arguments.append([parameters[1][0],parameters[2][0]])
-    arguments.append(parameters[3][0])
+    arguments.append([parameters[1][0],parameters[1][1]])
+    arguments.append(parameters[2][0])
 elif parameters[0][0]==1.0:
     arguments.append(parameters[0][0])
     arguments.append(parameters[1][0])
