@@ -50,6 +50,7 @@ def sgd(X,Y,W,args):#learning_rate is learning rate
 
     for i in range(num_iters):
         #j = i%(W.shape[1])
+        #print(i+1)
         y_pred = predict(X,W)
 
         gradient = -np.dot(x_transpose, (Y - y_pred))/(X.shape[0])
@@ -64,9 +65,11 @@ def sgd(X,Y,W,args):#learning_rate is learning rate
                 diff = getLoss(X,Y,W+learning_rate*direction) - loss
                 if diff > learning_rate * alpha * magnitude:
                     learning_rate = learning_rate * beta
+                    #print("     {}".format(learning_rate))
                 else:
                     break
-        
+                
+            
         W = W - learning_rate *gradient
         
         if(args[0]==2):
@@ -157,6 +160,8 @@ output_encoder = one_hot_encoder(output_labels_arr)
 
 x_train = input_encoder.encode(x_train)
 x_test = input_encoder.encode(x_test)
+
+y_train_saved = y_train
 y_train = output_encoder.encode(y_train)
 
 ones = np.ones((x_train.shape[0],1))
@@ -170,6 +175,13 @@ w = sgd(x_train,y_train,w,arguments)
 
 
 y_test_output = output_encoder.decode(predict(x_test,w))
+
+y_train_test = output_encoder.decode(predict(x_train,w))
+y_train_test = np.array([y_train_test]).T
+train_accuracy = (np.sum(y_train_test == y_train_saved))/y_train.shape[0]
+#print (np.array(y_train_saved).shape)
+#print (np.array(y_train_test).shape)
+#print(train_accuracy)
 print(arguments[2])
 
 np.savetxt(weightfile,w,delimiter=',')
