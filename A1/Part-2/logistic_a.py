@@ -1,13 +1,13 @@
 import csv
 import numpy as np
 import sys
-from scipy import special
-# trainfile=sys.argv[2]
-# testfile = sys.argv[3]
-# paramfile = sys.argv[4]
-# outputfile = sys.argv[5]
-# weightfile = sys.argv[6]
-trainfile = "train.csv"
+#from scipy import special
+trainfile=sys.argv[2]
+testfile = sys.argv[3]
+paramfile = sys.argv[4]
+outputfile = sys.argv[5]
+weightfile = sys.argv[6]
+#trainfile = "train.csv"
 
 
 
@@ -25,6 +25,9 @@ def getLoss(X,Y,W):
     loss = (1.0/(2*X.shape[0]))*np.sum( y_pred * Y )
     return loss
 
+def gradient_col(X,Y,W,col_no):
+    y_pred_col = np.dot(X,W[:,col_no])
+    return np.dot(X.T,y_pred_col-Y[:,col_no])
 
 def sgd(X,Y,W,alpha,num_iters):#alpha is learning rate
     x_transpose = np.transpose(X)
@@ -33,12 +36,13 @@ def sgd(X,Y,W,alpha,num_iters):#alpha is learning rate
         y_pred = predict(X,W)
         W[:,j] = W[:,j] + alpha/(2.0*X.shape[0]) * np.dot(x_transpose, (Y[:,j] - y_pred[:,j]))
         print("iteration: {}, Loss: {}".format(i+1,getLoss(X,Y,W)))
-    return W    
+    return W
+    #y_transpose = np.transpose(Y)    
     #for i in range(num_iters):
-    #    print("iteration: {}, Loss: {}".format(i,getLoss(X,Y,W)))
-    #    j = i%(W.shape[0])
-    #    y_pred = predict(X,W)
-    #    W[j,:] = W[j,:] + alpha/(2.0*X.shape[0]) * np.dot(y_transpose-y_pred.T, X[:,j])
+       #print("iteration: {}, Loss: {}".format(i,getLoss(X,Y,W)))
+    #   j = i%(W.shape[0])
+    #   y_pred = predict(X,W)
+    #   W[j,:] = W[j,:] + alpha/(2.0*X.shape[0]) * np.dot(y_transpose-y_pred.T, X[:,j])
 
     
     return W
@@ -50,7 +54,8 @@ class one_hot_encoder:
         self.labels_arr = []
         for i in range(x.shape[1]):
             self.labels_arr.append(np.unique(x[:,i]))
-
+        
+        
 
     def encode(self,x_input):
 
@@ -63,7 +68,11 @@ class one_hot_encoder:
 
         x_output = np.transpose(np.array(x_output))
         return x_output
-
+    
+    def decode(self,y_encoded):
+        y_out = np.argmax(y_encoded,axis = 1)
+        y_out = [self.labels_arr[i] for i in y_out]
+        
 
 
 
@@ -82,6 +91,7 @@ x_train = x_train[:,:(x_train.shape[1]-1)]
 input_encoder = one_hot_encoder(x_train)
 output_encoder = one_hot_encoder(y_train)
 
+
 x_train = input_encoder.encode(x_train)
 y_train = output_encoder.encode(y_train)
 
@@ -91,7 +101,7 @@ x_train = np.append(ones,x_train,axis=1)
 
 w = np.random.random([x_train.shape[1],y_train.shape[1]])* np.sqrt(2)/(x_train.shape[1]*y_train.shape[1])
 
-w = sgd(x_train,y_train,w,1,100000)
+#w = sgd(x_train,y_train,w,5,1000)
 #print(w)
 
 
