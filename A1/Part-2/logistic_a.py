@@ -35,24 +35,24 @@ def getLoss(X,Y,W):
 def sgd(X,Y,W,args):#learning_rate is learning rate
     if(args[0]==1):
         learning_rate = args[1]
-        
+
     elif(args[0]==2):
         learning_rate = args[1][0]
         seed = args[1][1]
-        
+
     else:
         learning_rate = args[1][0]
         alpha= args[1][1]
         beta = args[1][2]
-        
+
     num_iters = (int)(args[2])
     x_transpose = np.transpose(X)
-    
+
     loss_val = -1
     for i in range(num_iters):
         j = i%(W.shape[1])
         y_pred = predict(X,W)
-        
+
         gradient = -np.dot(x_transpose, (Y[:,j] - y_pred[:,j]))
         prev_loss = loss_val
         W[:,j] = W[:,j] - learning_rate/(1.0*X.shape[0]) *gradient
@@ -61,17 +61,17 @@ def sgd(X,Y,W,args):#learning_rate is learning rate
             learning_rate = learning_rate/np.sqrt(seed)
         elif(args[0]==3):
             direction = -gradient/np.sqrt((np.sum(gradient**2)))
-            
+
         #print("iteration: {}, Loss: {}".format(i+1,getLoss(X,Y,W)))
     return W
-    #y_transpose = np.transpose(Y)    
+    #y_transpose = np.transpose(Y)
     #for i in range(num_iters):
        #print("iteration: {}, Loss: {}".format(i,getLoss(X,Y,W)))
     #   j = i%(W.shape[0])
     #   y_pred = predict(X,W)
     #   W[j,:] = W[j,:] + learning_rate/(2.0*X.shape[0]) * np.dot(y_transpose-y_pred.T, X[:,j])
 
-    
+
     return W
 
 
@@ -79,25 +79,25 @@ class one_hot_encoder:
 
     def __init__(self,labels_arr):
         self.labels_arr = labels_arr
-  
+
     def encode(self,x_input):
 
         x_output =[]
 
         for i in range(len(self.labels_arr)):
             for label in self.labels_arr[i]:
-             
+
                 x_output.append((x_input[:,i]==label).astype(np.float64))
 
         x_output = np.transpose(np.array(x_output))
         return x_output
-    
+
     def decode(self,y_encoded):
         y_out = np.argmax(y_encoded,axis = 1)
         y_decoded = []
         for i in range(len(self.labels_arr)):
             y_decoded = y_decoded + [self.labels_arr[i][j] for j in y_out]
-        
+
         return y_decoded
 
 parameters=[]
@@ -140,13 +140,13 @@ x_train = x_train[:,:(x_train.shape[1]-1)]
 x_test = np.array(x_test)
 
 
-input_labels_arr = [['usual', 'pretentious', 'great_pret'], 
-['proper', 'less_proper', 'improper', 'critical', 'very_crit'], 
-['complete', 'completed', 'incomplete', 'foster'], 
-['1', '2', '3', 'more'], 
-['convenient', 'less_conv', 'critical'], 
-['convenient', 'inconv'], 
-['non-prob', 'slightly_prob', 'problematic'], 
+input_labels_arr = [['usual', 'pretentious', 'great_pret'],
+['proper', 'less_proper', 'improper', 'critical', 'very_crit'],
+['complete', 'completed', 'incomplete', 'foster'],
+['1', '2', '3', 'more'],
+['convenient', 'less_conv', 'critical'],
+['convenient', 'inconv'],
+['non-prob', 'slightly_prob', 'problematic'],
 ['recommended', 'priority', 'not_recom']]
 input_encoder = one_hot_encoder(input_labels_arr)
 
