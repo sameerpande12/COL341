@@ -37,8 +37,8 @@ def sgd(X,Y,W,args):#learning_rate is learning rate
         learning_rate = args[1]
 
     elif(args[0]==2):
-        learning_rate = args[1][0]
-        seed = args[1][1]
+        base_rate = args[1]
+
 
     else:
         learning_rate = args[1][0]
@@ -51,12 +51,17 @@ def sgd(X,Y,W,args):#learning_rate is learning rate
     for i in range(num_iters):
         #j = i%(W.shape[1])
         #print(i+1)
+        seed = i+1
+        if(args[0]==2):
+            learning_rate = base_rate/np.sqrt(seed)
+
         y_pred = predict(X,W)
 
+
         gradient = -np.dot(x_transpose, (Y - y_pred))/(X.shape[0])
-        
-        
-        
+
+
+
         if(args[0]==3):
             magnitude = np.sqrt(np.sum(gradient**2))
             direction = -gradient/magnitude
@@ -67,16 +72,17 @@ def sgd(X,Y,W,args):#learning_rate is learning rate
                     learning_rate = learning_rate * beta
                     #print("     {}".format(learning_rate))
                 else:
+                    gradient = -np.dot(x_transpose, (Y - y_pred))/(X.shape[0])
                     break
-                
-            
+
+
+
         W = W - learning_rate *gradient
-        
-        if(args[0]==2):
-            learning_rate = learning_rate/np.sqrt(seed)
-        
+
+
+
     return W
-    
+
 
 
 class one_hot_encoder:
@@ -105,25 +111,30 @@ class one_hot_encoder:
         return y_decoded
 
 parameters=[]
-with open(paramfile,'r') as filename:
-    csvreader = csv.reader(filename)
-    for row in csvreader:
-        row = [float(i) for i in row]
-        parameters.append(row)
+with open(paramfile,'r') as f:
+    parameters = f.readlines()
+
+#print(parameters)
+parameters[0] = float(parameters[0].strip())
+parameters[1] = parameters[1].strip().split(',')
+parameters[1] = [ float(p.strip()) for p in parameters[1] ]
+parameters[2] = float(parameters[2].strip())
+if(len(parameters)>3):
+    parameters[3] = float(parameters[3].strip())
 
 arguments= []
-if parameters[0][0]==2.0:
-    arguments.append(parameters[0][0])
-    arguments.append([parameters[1][0],parameters[1][1]])
-    arguments.append(parameters[2][0])
-elif parameters[0][0]==1.0:
-    arguments.append(parameters[0][0])
+if parameters[0]==2.0:
+    arguments.append(parameters[0])
     arguments.append(parameters[1][0])
-    arguments.append(parameters[2][0])
-elif parameters[0][0]==3.0:
-    arguments.append(parameters[0][0])
+    arguments.append(parameters[2])
+elif parameters[0]==1.0:
+    arguments.append(parameters[0])
+    arguments.append(parameters[1][0])
+    arguments.append(parameters[2])
+elif parameters[0]==3.0:
+    arguments.append(parameters[0])
     arguments.append([parameters[1][0],parameters[1][1],parameters[1][2]])
-    arguments.append(parameters[2][0])
+    arguments.append(parameters[2])
 
 x_train = []
 with open(trainfile,'r') as filename:
@@ -150,7 +161,7 @@ input_labels_arr = [['usual', 'pretentious', 'great_pret'],
 ['1', '2', '3', 'more'],
 ['convenient', 'less_conv', 'critical'],
 ['convenient', 'inconv'],
-['non-prob', 'slightly_prob', 'problematic'],
+['nonprob', 'slightly_prob', 'problematic'],
 ['recommended', 'priority', 'not_recom']]
 input_encoder = one_hot_encoder(input_labels_arr)
 
@@ -169,7 +180,7 @@ x_train = np.append(ones,x_train,axis=1)
 ones = np.ones((x_test.shape[0],1))
 x_test = np.append(ones,x_test,axis=1)
 
-w = np.random.random([x_train.shape[1],y_train.shape[1]])* np.sqrt(2)/(x_train.shape[1]*y_train.shape[1])
+w = np.zeros([x_train.shape[1],y_train.shape[1]])* np.sqrt(2)/(x_train.shape[1]*y_train.shape[1])
 
 w = sgd(x_train,y_train,w,arguments)
 
