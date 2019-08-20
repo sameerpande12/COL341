@@ -37,8 +37,7 @@ def batch_sgd(X,Y,W,args):#learning_rate is learning rate
         learning_rate = args[1]
 
     elif(args[0]==2):
-        learning_rate = args[1][0]
-        seed = args[1][1]
+        base_rate = args[1]
 
     else:
         learning_rate = args[1][0]
@@ -50,13 +49,16 @@ def batch_sgd(X,Y,W,args):#learning_rate is learning rate
     num_batches = (int)(X.shape[0]/batch_size)
     if(num_batches * batch_size < X.shape[0]):
         num_batches += 1
-        
+
     for i in range(num_iters):
-        
+        seed = (i+1)
+        if(args[0]==2):
+            learning_rate = base_rate/np.sqrt(seed)
+
         for iterator in range(num_batches):
             x = X[(iterator * batch_size):((iterator+1)*batch_size),:]
             y = Y[(iterator * batch_size):((iterator+1)*batch_size),:]
-        
+
             y_pred = predict(x,W)
             gradient = -np.dot(x.T, (y - y_pred))/(x.shape[0])
             if(args[0]==3):
@@ -69,15 +71,12 @@ def batch_sgd(X,Y,W,args):#learning_rate is learning rate
                         learning_rate = learning_rate * beta
                     else:
                         break
-                    
-                
+
+
             W = W - learning_rate *gradient
-            
-            if(args[0]==2):
-                learning_rate = learning_rate/np.sqrt(seed)
-        
+
     return W
-    
+
 
 
 class one_hot_encoder:
@@ -106,28 +105,33 @@ class one_hot_encoder:
         return y_decoded
 
 parameters=[]
-with open(paramfile,'r') as filename:
-    csvreader = csv.reader(filename)
-    for row in csvreader:
-        row = [float(i) for i in row]
-        parameters.append(row)
+with open(paramfile,'r') as f:
+    parameters = f.readlines()
+
+#print(parameters)
+parameters[0] = float(parameters[0].strip())
+parameters[1] = parameters[1].strip().split(',')
+parameters[1] = [ float(p.strip()) for p in parameters[1] ]
+parameters[2] = float(parameters[2].strip())
+parameters[3] = float(parameters[3].strip())
 
 arguments= []
-if parameters[0][0]==2.0:
-    arguments.append(parameters[0][0])
-    arguments.append([parameters[1][0],parameters[1][1]])
-    arguments.append(parameters[2][0])
-    arguments.append(parameters[3][0])
-elif parameters[0][0]==1.0:
-    arguments.append(parameters[0][0])
+arguments= []
+if parameters[0]==2.0:
+    arguments.append(parameters[0])
     arguments.append(parameters[1][0])
-    arguments.append(parameters[2][0])
-    arguments.append(parameters[3][0])
-elif parameters[0][0]==3.0:
-    arguments.append(parameters[0][0])
+    arguments.append(parameters[2])
+    arguments.append(parameters[3])
+elif parameters[0]==1.0:
+    arguments.append(parameters[0])
+    arguments.append(parameters[1][0])
+    arguments.append(parameters[2])
+    arguments.append(parameters[3])
+elif parameters[0]==3.0:
+    arguments.append(parameters[0])
     arguments.append([parameters[1][0],parameters[1][1],parameters[1][2]])
-    arguments.append(parameters[2][0])
-    arguments.append(parameters[3][0])
+    arguments.append(parameters[2])
+    arguments.append(parameters[3])
 
 x_train = []
 with open(trainfile,'r') as filename:
@@ -154,7 +158,7 @@ input_labels_arr = [['usual', 'pretentious', 'great_pret'],
 ['1', '2', '3', 'more'],
 ['convenient', 'less_conv', 'critical'],
 ['convenient', 'inconv'],
-['non-prob', 'slightly_prob', 'problematic'],
+['nonprob', 'slightly_prob', 'problematic'],
 ['recommended', 'priority', 'not_recom']]
 input_encoder = one_hot_encoder(input_labels_arr)
 
