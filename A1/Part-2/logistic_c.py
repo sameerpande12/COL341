@@ -1,13 +1,18 @@
 import csv
 import numpy as np
 import sys
-#from scipy import special
-trainfile=sys.argv[1]
-testfile = sys.argv[2]
-paramfile = sys.argv[3]
-outputfile = sys.argv[4]
-weightfile = sys.argv[5]
-#trainfile = "train.csv"
+import time
+from sklearn.metrics import confusion_matrix,f1_score
+#trainfile=sys.argv[1]
+#testfile = sys.argv[2]
+trainfile = 'train.csv'
+testfile = 'test_X.csv'
+#paramfile = sys.argv[3]
+#outputfile = sys.argv[4]
+#weightfile = sys.argv[5]
+outputfile = ""
+weightfile=""
+
 
 def printToFile(fname,arr):
     f = open(fname,'w+')
@@ -19,7 +24,7 @@ def predict(X,W):
     col = np.sum(h_matrix,axis=1)
     col = col.reshape(col.shape[0],1)
     h_matrix = h_matrix/col
-    #h_matrix = special.softmax(np.dot(X,W))
+
     return h_matrix
 
 def getLoss(X,Y,W):
@@ -28,17 +33,16 @@ def getLoss(X,Y,W):
     loss = (1.0/(X.shape[0]))*np.sum( y_pred * Y )
     return loss
 
-#def gradient_col(X,Y,W,col_no):
-#    y_pred_col = np.dot(X,W[:,col_no])
-#    return np.dot(X.T,y_pred_col-Y[:,j])
 
 def batch_sgd(X,Y,W,args):#learning_rate is learning rate
+    
+    
     if(args[0]==1):
         learning_rate = args[1]
 
     elif(args[0]==2):
-        learning_rate = args[1][0]
-        seed = args[1][1]
+        base_rate = args[1][0]
+        
 
     else:
         learning_rate = args[1][0]
@@ -47,13 +51,21 @@ def batch_sgd(X,Y,W,args):#learning_rate is learning rate
 
     num_iters = (int)(args[2])
     batch_size = (int)(args[3])
+    file = open("Data/batch_data_{}.csv".format(batch_size),'w+')
     num_batches = (int)(X.shape[0]/batch_size)
     if(num_batches * batch_size < X.shape[0]):
         num_batches += 1
-        
+    
+    count  =0
     for i in range(num_iters):
+        #print("iteration:{}, num_batches:{}".format(i+1,num_batches))
+        print("Batch_Size: {}, iterations: {}".format((int)(args[3]),i))
         
+        
+        if(args[0]==2):
+                learning_rate = base_rate/np.sqrt(i+1)
         for iterator in range(num_batches):
+            #print("Batch number: "+str(iterator))
             x = X[(iterator * batch_size):((iterator+1)*batch_size),:]
             y = Y[(iterator * batch_size):((iterator+1)*batch_size),:]
         
@@ -63,6 +75,7 @@ def batch_sgd(X,Y,W,args):#learning_rate is learning rate
                 magnitude = np.sqrt(np.sum(gradient**2))
                 direction = -gradient/magnitude
                 loss = getLoss(x,y,W)
+                
                 while True:
                     diff = getLoss(x,y,W+learning_rate*direction) - loss
                     if diff > learning_rate * alpha * magnitude:
@@ -70,12 +83,15 @@ def batch_sgd(X,Y,W,args):#learning_rate is learning rate
                     else:
                         break
                     
-                
+            count = count + batch_size
             W = W - learning_rate *gradient
-            
-            if(args[0]==2):
-                learning_rate = learning_rate/np.sqrt(seed)
         
+        file.write("{},{}\n".format(count,getLoss(X,Y,W)))
+            
+            #loss = getLoss(x,y,W)
+            
+    
+    file.close()
     return W
     
 
@@ -105,29 +121,9 @@ class one_hot_encoder:
 
         return y_decoded
 
-parameters=[]
-with open(paramfile,'r') as filename:
-    csvreader = csv.reader(filename)
-    for row in csvreader:
-        row = [float(i) for i in row]
-        parameters.append(row)
 
 arguments= []
-if parameters[0][0]==2.0:
-    arguments.append(parameters[0][0])
-    arguments.append([parameters[1][0],parameters[1][1]])
-    arguments.append(parameters[2][0])
-    arguments.append(parameters[3][0])
-elif parameters[0][0]==1.0:
-    arguments.append(parameters[0][0])
-    arguments.append(parameters[1][0])
-    arguments.append(parameters[2][0])
-    arguments.append(parameters[3][0])
-elif parameters[0][0]==3.0:
-    arguments.append(parameters[0][0])
-    arguments.append([parameters[1][0],parameters[1][1],parameters[1][2]])
-    arguments.append(parameters[2][0])
-    arguments.append(parameters[3][0])
+
 
 x_train = []
 with open(trainfile,'r') as filename:
@@ -154,10 +150,9 @@ input_labels_arr = [['usual', 'pretentious', 'great_pret'],
 ['1', '2', '3', 'more'],
 ['convenient', 'less_conv', 'critical'],
 ['convenient', 'inconv'],
-['non-prob', 'slightly_prob', 'problematic'],
+['nonprob', 'slightly_prob', 'problematic'],
 ['recommended', 'priority', 'not_recom']]
 input_encoder = one_hot_encoder(input_labels_arr)
-
 output_labels_arr = [['not_recom', 'recommend', 'very_recom', 'priority', 'spec_prior']]
 output_encoder = one_hot_encoder(output_labels_arr)
 
@@ -173,29 +168,36 @@ x_train = np.append(ones,x_train,axis=1)
 ones = np.ones((x_test.shape[0],1))
 x_test = np.append(ones,x_test,axis=1)
 
-w = np.random.random([x_train.shape[1],y_train.shape[1]])* np.sqrt(2)/(x_train.shape[1]*y_train.shape[1])
-
-w = batch_sgd(x_train,y_train,w,arguments)
-
-
-y_test_output = output_encoder.decode(predict(x_test,w))
-
-y_train_test = output_encoder.decode(predict(x_train,w))
-y_train_test = np.array([y_train_test]).T
-train_accuracy = (np.sum(y_train_test == y_train_saved))/y_train.shape[0]
-#print (np.array(y_train_saved).shape)
-#print (np.array(y_train_test).shape)
-#print(train_accuracy)
-print(arguments[2])
-
-np.savetxt(weightfile,w,delimiter=',')
-
-printToFile(outputfile,y_test_output)
-#print(w)
-
-
-#for i in range(num_iters):
-    #    print("iteration: {}, Loss: {}".format(i,getLoss(X,Y,W)))
-    #    j = i%(W.shape[0])
-    #    y_pred = predict(X,W)
-    #    W[j,:] = W[j,:] + learning_rate/(2.0*X.shape[0]) * np.dot(y_transpose-y_pred.T, X[:,j])
+batches = [3000,1000,300,100,30,10,3,1]
+confusion_matrices = {}
+microf1 = {}
+macrof1 = {}
+f1 = {}
+for batch_size in batches:
+    #arguments[3]=batch_size
+    #arguments[2]=1000
+    #arguments[0]=1
+    #arguments[1]=[0.1]
+    if batch_size >= 1000: 
+        arguments = [1,0.1,500,batch_size]
+    else:
+        arguments = [1,0.1,500,batch_size]
+    #arguments[1]= [0.1,0.3,0.5]
+    w = np.random.random([x_train.shape[1],y_train.shape[1]])* np.sqrt(2)/(x_train.shape[1]*y_train.shape[1])
+    w = batch_sgd(x_train,y_train,w,arguments)
+    y_test_output = output_encoder.decode(predict(x_test,w))
+    y_train_test = output_encoder.decode(predict(x_train,w))
+    y_train_test = np.array([y_train_test]).T
+    
+    confusion_matrices[batch_size] = confusion_matrix(y_train_saved,y_train_test,labels=output_labels_arr[0])
+    microf1[batch_size] = f1_score(y_train_saved,y_train_test,average='micro',labels=output_labels_arr[0])
+    macrof1[batch_size] = f1_score(y_train_saved,y_train_test,average='macro',labels=output_labels_arr[0])
+    f1[batch_size] = f1_score(y_train_saved,y_train_test,average=None,labels=output_labels_arr[0])
+    
+    
+    train_accuracy = (np.sum(y_train_test == y_train_saved))/y_train.shape[0]
+    
+    weightfile = "Data/weight_{}.csv".format(batch_size)
+    outputfile = "Data/output_{}.csv".format(batch_size)
+    np.savetxt(weightfile,w,delimiter=',')
+    printToFile(outputfile,y_test_output)

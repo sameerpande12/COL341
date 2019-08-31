@@ -49,9 +49,10 @@ def batch_sgd(X,Y,W,args):#learning_rate is learning rate
     num_batches = (int)(X.shape[0]/batch_size)
     if(num_batches * batch_size < X.shape[0]):
         num_batches += 1
-
+    iterations = 0
     for i in range(num_iters):
         seed = (i+1)
+        iterations = iterations + 1
         if(args[0]==2):
             learning_rate = base_rate/np.sqrt(seed)
 
@@ -75,6 +76,7 @@ def batch_sgd(X,Y,W,args):#learning_rate is learning rate
 
             W = W - learning_rate *gradient
 
+    #print(iterations)
     return W
 
 
