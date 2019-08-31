@@ -11,12 +11,12 @@ with open(paramfile,'r')as f:
     parameters = f.readlines()
 
 for i in range(4):
-    parameters[i] = float(paramters[i].strip())
+    parameters[i] = float(parameters[i].strip())
 
-paramters[4] = parameters[1].strip().split()
-paramters[4] = [int(p) for p in paramters[4]]
-
+parameters[4] = parameters[4].strip().split()
+parameters[4] = [int(p) for p in parameters[4]]
 #parameters [learning_type, learning rate/seed, max_epochs, iterations, [array of hidden layers]]
+
 
 
 def sigmoid (x):
@@ -76,3 +76,16 @@ class neural_network:
             ones = np.ones(n)
             grad_lw =  np.dot((np.append(ones,self.z[i])).T, f[i])
             np.weights[i] = np.weights[i] - learning_rate * grad_lw
+
+
+x_train = []
+with open(trainfile,'r') as filename:
+    csvreader = csv.reader(filename)
+    for row in csvreader:
+        row = [float(i) for i in row]
+        x_train.append(row)
+
+x_train = np.array(x_train)
+y_train = x_train[:,x_train.shape[1]-1]
+x_train = x_train[:,:(x_train.shape[1]-1)]
+
