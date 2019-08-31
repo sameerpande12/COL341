@@ -25,7 +25,7 @@ def sigmoid (x):
 def relu(x):
     return max(x,0)
 
-class neural_network():
+class neural_network:
     
     def __init__(self,layer_shapes,activation):
         
@@ -76,8 +76,3 @@ class neural_network():
             ones = np.ones(n)
             grad_lw =  np.dot((np.append(ones,self.z[i])).T, f[i])
             np.weights[i] = np.weights[i] - learning_rate * grad_lw
-
-                    
-        
-        
-    
