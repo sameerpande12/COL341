@@ -67,7 +67,7 @@ class neural_network:
 
         z = self.z
         n = y_input.shape[0]
-        self.grad_lz[num_layers-1] = (1.0/n)*((1-y_input)/(1- z[num_layers-1]) - y_input/(z[num_layers-1]))
+        self.grad_lz[num_layers-1] = (1/n)*((1-y_input)/(1- z[num_layers-1]) - y_input/(z[num_layers-1]))
         for i in range(num_layers):
             j = num_layers-i-1
             if (j==num_layers-1):
@@ -105,16 +105,17 @@ if( x_train.shape[0] > batch_size*num_batches):
 
 nn = neural_network(layer_shapes,sigmoid)
 for i in range(num_iters):
-    for j in range(num_batches):
-        x = x_train[ j*batch_size : (j+1)*batch_size]
-        y = y_train[ j*batch_size : (j+1)*batch_size]
-        y = np.array([y])
-        y = y.T
-        nn.forward(x)
-        learning_rate = base_rate
-        if(learning_type == 2):
-            learning_rate = learning_rate/np.sqrt(i+1)
-        nn.backpropagate(y,learning_rate)
+    j = i%num_batches
+    #for j in range(num_batches):
+    x = x_train[ j*batch_size : (j+1)*batch_size]
+    y = y_train[ j*batch_size : (j+1)*batch_size]
+    y = np.array([y])
+    y = y.T
+    nn.forward(x)
+    learning_rate = base_rate
+    if(learning_type == 2):
+        learning_rate = learning_rate/np.sqrt(i+1)
+    nn.backpropagate(y,learning_rate)
 
 print(num_iters)
 
