@@ -105,7 +105,6 @@ if( x_train.shape[0] > batch_size*num_batches):
 
 nn = neural_network(layer_shapes,sigmoid)
 for i in range(num_iters):
-    # print("Iteration :{}".format(i+1))
     for j in range(num_batches):
         x = x_train[ j*batch_size : (j+1)*batch_size]
         y = y_train[ j*batch_size : (j+1)*batch_size]
@@ -119,9 +118,9 @@ for i in range(num_iters):
 
 print(num_iters)
 
-
-with open(weightfile,'w+') as f:
-    for i in range(nn.weights.shape[0]):
-        for j in range(nn.weights[i].shape[0]):
-            for k in range(nn.weights[i].shape[1]):
-                f.write("{}\n".format(nn.weights[i][j][k]))
+f = open(weightfile,'w+')
+for i in range(nn.weights.shape[0]):
+    for j in range(nn.weights[i].shape[0]):
+        for k in range(nn.weights[i].shape[1]):
+            f.write("{}\n".format(nn.weights[i][j][k]))
+f.close()
