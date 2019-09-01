@@ -53,33 +53,33 @@ class neural_network:
             if(i==0):
                 self.z.append(np.array(x_input))
             else:
-                ones = np.ones( (self.z[i-1]).shape[0])
+                ones = np.ones( ((self.z[i-1]).shape[0],1) )
                 z_i =  sigmoid(np.dot( np.append(ones,self.z[i-1],axis=1), self.weights[i-1]))
                 self.z.append(z_i)
-            
+        
     def backpropagate(self,y_input,learning_rate):#z_l is n X num_nodes_l
-        self.grad_lz = np.array([])
-        f =np.array([])# element wise product product grad_lz[i+1]* z[i+1]*(1-z[i+1])
+        self.grad_lz = []
+        num_layers = self.num_layers
+        f =[]# element wise product product grad_lz[i+1]* z[i+1]*(1-z[i+1])
         for i in range(num_layers):
-            self.grad_lz.append(np.array([]))
-            f.append(np.array([]))
+            self.grad_lz.append([])
+            f.append([])
 
         z = self.z
         n = y_input.shape[0]
         self.grad_lz[num_layers-1] = (1-y_input)/(1- z[num_layers-1]) - y_input/(z[num_layers-1])
-
         for i in range(num_layers):
-            if (i==0):
+            j = num_layers-i-1
+            if (j==num_layers-1):
                 continue
             else:
-                j = num_layers-i-1
-                f[j] = self.grad_lz[j+1] * self.z * (1 - self.z)
-                self.grad_lz[j] = (1.0/n) * np.dot( (self.weights[1:]).T , f[j].T )
+                f[j] = self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
+                self.grad_lz[j] = (1.0/n) * np.dot( f[j] ,((self.weights[j])[1:]).T)
         
         for i in range(num_layers - 1):## weights[i] is input to the ith layer
-            ones = np.ones(n)
-            grad_lw =  np.dot((np.append(ones,self.z[i])).T, f[i])
-            np.weights[i] = np.weights[i] - learning_rate * grad_lw
+            ones = np.ones((n,1))
+            grad_lw =  np.dot((np.append(ones,self.z[i],axis=1)).T, f[i])
+            self.weights[i] = self.weights[i] - learning_rate * grad_lw
 
 
 x_train = []
@@ -105,13 +105,16 @@ if( x_train.shape[0] > batch_size*num_batches):
 
 nn = neural_network(layer_shapes,sigmoid)
 for i in range(num_iters):
-    print("Iteration :{}".format(i+1))
+    # print("Iteration :{}".format(i+1))
     for j in range(num_batches):
         x = x_train[ j*batch_size : (j+1)*batch_size]
         y = y_train[ j*batch_size : (j+1)*batch_size]
+        y = np.array([y])
+        y = y.T
         nn.forward(x)
         learning_rate = base_rate
         if(learning_type == 2):
             learning_rate = learning_rate/np.sqrt(i+1)
         nn.backpropagate(y,learning_rate)
 
+print(num_iters)
