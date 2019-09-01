@@ -85,8 +85,6 @@ class neural_network:
         self.z[num_layers-1] = np.exp(self.z[num_layers-1])
         col = np.sum(self.z[num_layers-1],axis = 1)
         col = (np.array([col])).T
-        print(self.z[num_layers-1].shape)
-        print(col.shape)
         self.z[num_layers-1] = (self.z[num_layers-1])/col
         
     def backpropagate(self,y_input,learning_rate):#z_l is n X num_nodes_l
@@ -99,6 +97,8 @@ class neural_network:
 
         z = self.z
         n = y_input.shape[0]
+        # print(z[num_layers-1].shape)
+        # print(y_input.shape)
         self.grad_lz[num_layers-1] = (1/n)*(z[num_layers-1]-y_input)
         for i in range(num_layers):
             j = num_layers-i-1
@@ -145,8 +145,7 @@ for i in range(num_iters):
     #for j in range(num_batches):
     x = x_train[ j*batch_size : (j+1)*batch_size]
     y = y_train[ j*batch_size : (j+1)*batch_size]
-    y = np.array([y])
-    y = y.T
+    
     nn.forward(x)
     learning_rate = base_rate
     if(learning_type == 2):
