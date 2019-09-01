@@ -118,3 +118,10 @@ for i in range(num_iters):
         nn.backpropagate(y,learning_rate)
 
 print(num_iters)
+
+
+with open(weightfile,'w+') as f:
+    for i in range(nn.weights.shape[0]):
+        for j in range(nn.weights[i].shape[0]):
+            for k in range(nn.weights[i].shape[1]):
+                f.write("{}\n".format(nn.weights[i][j][k]))
