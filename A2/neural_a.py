@@ -67,14 +67,14 @@ class neural_network:
 
         z = self.z
         n = y_input.shape[0]
-        self.grad_lz[num_layers-1] = (1-y_input)/(1- z[num_layers-1]) - y_input/(z[num_layers-1])
+        self.grad_lz[num_layers-1] = (1.0/n)*((1-y_input)/(1- z[num_layers-1]) - y_input/(z[num_layers-1]))
         for i in range(num_layers):
             j = num_layers-i-1
             if (j==num_layers-1):
                 continue
             else:
                 f[j] = self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
-                self.grad_lz[j] = (1.0/n) * np.dot( f[j] ,((self.weights[j])[1:]).T)
+                self.grad_lz[j] =  np.dot( f[j] ,((self.weights[j])[1:]).T)
         
         for i in range(num_layers - 1):## weights[i] is input to the ith layer
             ones = np.ones((n,1))
