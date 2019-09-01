@@ -11,7 +11,10 @@ with open(paramfile,'r')as f:
     parameters = f.readlines()
 
 for i in range(4):
-    parameters[i] = float(parameters[i].strip())
+    if (i==1):
+        parameters[i] = float(parameters[i].strip())
+    else:
+        parameters[i] = int(parameters[i].strip())
 
 parameters[4] = parameters[4].strip().split()
 parameters[4] = [int(p) for p in parameters[4]]
@@ -32,18 +35,19 @@ class neural_network:
         #will contain all layer sizes: from input layer to output layer in order
         self.layer_shapes = layer_shapes
         self.num_layers = len(layer_shapes)
-        self.weights = np.array([])
+        self.weights = []
         self.activation = activation
-        for i in range(len(layer_shapes))-1:
+        for i in range(len(layer_shapes)-1):
             w = np.zeros([layer_shapes[i]+1, layer_shapes[i+1]])
             self.weights.append(w)
+        self.weights = np.array(self.weights)
         
 
     
-    def forward(self,x_input,y_input):
-        ones = np.ones((x_train.shape[0]),1)
+    def forward(self,x_input):
+        ones = np.ones((x_input.shape[0],1))
         #x_input = np.append(ones,x_input,axis = 1)
-        self.z = np.array([])
+        self.z = []
 
         for i in range(len(layer_shapes)):
             if(i==0):
@@ -88,4 +92,26 @@ with open(trainfile,'r') as filename:
 x_train = np.array(x_train)
 y_train = x_train[:,x_train.shape[1]-1]
 x_train = x_train[:,:(x_train.shape[1]-1)]
+
+batch_size = parameters[3]
+base_rate = parameters[1]
+num_iters = parameters[2]
+learning_type = parameters[0]
+layer_shapes = [x_train.shape[1]]+parameters[4]+[1]
+
+num_batches = (int)(x_train.shape[0]/batch_size)
+if( x_train.shape[0] > batch_size*num_batches):
+    num_batches = num_batches + 1
+
+nn = neural_network(layer_shapes,sigmoid)
+for i in range(num_iters):
+    print("Iteration :{}".format(i+1))
+    for j in range(num_batches):
+        x = x_train[ j*batch_size : (j+1)*batch_size]
+        y = y_train[ j*batch_size : (j+1)*batch_size]
+        nn.forward(x)
+        learning_rate = base_rate
+        if(learning_type == 2):
+            learning_rate = learning_rate/np.sqrt(i+1)
+        nn.backpropagate(y,learning_rate)
 
