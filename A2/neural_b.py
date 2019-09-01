@@ -44,13 +44,13 @@ class one_hot_encoder:
         x_output = np.transpose(np.array(x_output))
         return x_output
 
-    def decode(self,y_encoded):
-        y_out = np.argmax(y_encoded,axis = 1)
-        y_decoded = []
-        for i in range(len(self.labels_arr)):
-            y_decoded = y_decoded + [self.labels_arr[i][j] for j in y_out]
+    # def decode(self,y_encoded):
+    #     y_out = np.argmax(y_encoded,axis = 1)
+    #     y_decoded = []
+    #     for i in range(len(self.labels_arr)):
+    #         y_decoded = y_decoded + [self.labels_arr[i][j] for j in y_out]
 
-        return y_decoded
+    #     return y_decoded
 
 
 class neural_network:
