@@ -79,14 +79,22 @@ class neural_network:
                 self.z.append(np.array(x_input))
             else:
                 ones = np.ones( ((self.z[i-1]).shape[0],1) )
-                z_i =  sigmoid(np.dot( np.append(ones,self.z[i-1],axis=1), self.weights[i-1]))
+                if (i==self.num_layers - 1):
+                    z_i =  (np.dot( np.append(ones,self.z[i-1],axis=1), self.weights[i-1]))
+                    z_i = np.exp(z_i)
+                    col = np.sum(z_i,axis=1)
+                    col = np.array([col]).T
+                    z_i = z_i/col
+                    self.y_pred = z_i
+                else:
+                    z_i =  sigmoid(np.dot( np.append(ones,self.z[i-1],axis=1), self.weights[i-1]))
                 self.z.append(z_i)
         
-        self.y_pred = np.exp(self.z[num_layers-1])
-        col = np.sum(self.y_pred,axis = 1)
-        col = (np.array([col])).T
-        self.y_pred = (self.y_pred)/col
-        self.z[num_layers-1] = self.y_pred
+        # self.y_pred = np.exp(self.z[num_layers-1])
+        # col = np.sum(self.y_pred,axis = 1)
+        # col = (np.array([col])).T
+        # self.y_pred = (self.y_pred)/col
+        # self.z[num_layers-1] = self.y_pred
         
     def backpropagate(self,y_input,learning_rate):#z_l is n X num_nodes_l
         self.grad_lz = []
@@ -103,7 +111,7 @@ class neural_network:
         for i in range(num_layers):
             j = num_layers-i-1
             if (j==num_layers-1):
-                self.grad_lz[j] = (1.0/n)* (self.y_pred - y_input)/((self.y_pred)*(1-self.y_pred))
+                self.grad_lz[j] = - (1.0/n)* (y_input/self.y_pred) 
             elif (j==num_layers-2):
                 self.grad_lz[j] = (1.0/n)* np.dot((self.y_pred -y_input),((self.weights[j])[1:]).T)
             else:
@@ -160,7 +168,7 @@ if( x_train.shape[0] > batch_size*num_batches):
     num_batches = num_batches + 1
 
 nn = neural_network(layer_shapes,sigmoid)
-# num_iters = batch_size
+# num_iters = 1
 for i in range(num_iters):
     j = i%num_batches
     #for j in range(num_batches):
