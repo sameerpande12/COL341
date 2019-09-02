@@ -86,6 +86,7 @@ class neural_network:
         col = np.sum(self.y_pred,axis = 1)
         col = (np.array([col])).T
         self.y_pred = (self.y_pred)/col
+        self.z[num_layers-1] = self.y_pred
         
     def backpropagate(self,y_input,learning_rate):#z_l is n X num_nodes_l
         self.grad_lz = []
@@ -97,24 +98,40 @@ class neural_network:
 
         z = self.z
         n = y_input.shape[0]
-        # print(z[num_layers-1].shape)
-        # print(y_input.shape)
-        self.grad_lz[num_layers-1]= (1.0/n)*(self.y_pred - y_input)
+        
+        # self.grad_lz[num_layers-1] = (1.0/n)* (self.y_pred - y_input)/((self.y_pred)*(1-self.y_pred))
         for i in range(num_layers):
             j = num_layers-i-1
             if (j==num_layers-1):
-                continue
+                self.grad_lz[j] = (1.0/n)* (self.y_pred - y_input)/((self.y_pred)*(1-self.y_pred))
+            elif (j==num_layers-2):
+                self.grad_lz[j] = (1.0/n)* np.dot((self.y_pred -y_input),((self.weights[j])[1:]).T)
             else:
-                if(j==num_layers-2):
-                    f[j] = self.grad_lz[j+1]
-                else:
-                    f[j] = self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
+                f[j]=self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
                 self.grad_lz[j] =  np.dot( f[j] ,((self.weights[j])[1:]).T)
+            
         
-        for i in range(num_layers - 1):## weights[i] is input to the ith layer
+        
+        for i in range(num_layers-1):
             ones = np.ones((n,1))
-            grad_lw =  np.dot((np.append(ones,self.z[i],axis=1)).T, f[i])
+            if(i==num_layers-2):
+                grad_lw = np.dot((np.append(ones,self.z[i],axis=1)).T, (self.y_pred-y_input))*(1.0/n)
+            else:
+                grad_lw =  np.dot((np.append(ones,self.z[i],axis=1)).T, f[i])
             self.weights[i] = self.weights[i] - learning_rate * grad_lw
+        # self.grad_lz[num_layers-1]= (1.0/n)*(self.y_pred - y_input)
+        # for i in range(num_layers):
+        #     j = num_layers-i-1
+        #     if (j==num_layers-1):
+        #         continue
+        #     else:
+        #         f[j] = self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
+        #         self.grad_lz[j] =  np.dot( f[j] ,((self.weights[j])[1:]).T)
+        
+        # for i in range(num_layers - 1):## weights[i] is input to the ith layer
+        #     ones = np.ones((n,1))
+        #     grad_lw =  np.dot((np.append(ones,self.z[i],axis=1)).T, f[i])
+        #     self.weights[i] = self.weights[i] - learning_rate * grad_lw
 
 
 x_train = []
@@ -143,6 +160,7 @@ if( x_train.shape[0] > batch_size*num_batches):
     num_batches = num_batches + 1
 
 nn = neural_network(layer_shapes,sigmoid)
+# num_iters = batch_size
 for i in range(num_iters):
     j = i%num_batches
     #for j in range(num_batches):
