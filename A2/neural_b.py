@@ -82,10 +82,10 @@ class neural_network:
                 z_i =  sigmoid(np.dot( np.append(ones,self.z[i-1],axis=1), self.weights[i-1]))
                 self.z.append(z_i)
         
-        self.z[num_layers-1] = np.exp(self.z[num_layers-1])
-        col = np.sum(self.z[num_layers-1],axis = 1)
+        self.y_pred = np.exp(self.z[num_layers-1])
+        col = np.sum(self.y_pred,axis = 1)
         col = (np.array([col])).T
-        self.z[num_layers-1] = (self.z[num_layers-1])/col
+        self.y_pred = (self.y_pred)/col
         
     def backpropagate(self,y_input,learning_rate):#z_l is n X num_nodes_l
         self.grad_lz = []
@@ -99,13 +99,16 @@ class neural_network:
         n = y_input.shape[0]
         # print(z[num_layers-1].shape)
         # print(y_input.shape)
-        self.grad_lz[num_layers-1] = (1/n)*(z[num_layers-1]-y_input)
+        self.grad_lz[num_layers-1]= (1.0/n)*(self.y_pred - y_input)
         for i in range(num_layers):
             j = num_layers-i-1
             if (j==num_layers-1):
                 continue
             else:
-                f[j] = self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
+                if(j==num_layers-2):
+                    f[j] = self.grad_lz[j+1]
+                else:
+                    f[j] = self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
                 self.grad_lz[j] =  np.dot( f[j] ,((self.weights[j])[1:]).T)
         
         for i in range(num_layers - 1):## weights[i] is input to the ith layer
