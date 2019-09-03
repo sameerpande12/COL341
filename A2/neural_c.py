@@ -2,11 +2,14 @@ import csv
 import numpy as np
 import sys
 
+# trainfile = "Neural_data/CIFAR10/train.csv"
+# testfile = "Neural_data/CIFAR10/test_X.csv"
+# outputfile = "output_weights.txt"
 trainfile = sys.argv[1]
 testfile = sys.argv[2]
 outputfile = sys.argv[3]
 
-parameters=[2,0.5,1000,100,[10]]
+parameters=[1,0.5,10000,100,[10,10]]
 
 # for i in range(4):
 #     if (i==1):
@@ -26,7 +29,19 @@ def sigmoid (x):
 def relu(x):
     return max(x,0)
 
-
+class preprocessor:
+    def fit(self,x_train):
+        self.mean = np.mean(x_train,axis=0)
+        self.std = np.std(x_train,axis=0)
+        self.std[self.std==0] = 1
+    
+    def normalize(self,x):
+        return (x-self.mean)/(self.std)
+    def de_normalize(self,x):
+        return (x * self.std ) + self.mean
+        
+            
+            
 class one_hot_encoder:
     
     def __init__(self,labels_arr):
@@ -66,7 +81,7 @@ class neural_network:
         self.weights = []
         self.activation = activation
         for i in range(len(layer_shapes)-1):
-            w = np.zeros([layer_shapes[i]+1, layer_shapes[i+1]])
+            w = (np.random.random([layer_shapes[i]+1, layer_shapes[i+1]]))*np.sqrt(2)/(  layer_shapes[i] * (layer_shapes[i+1]+1))
             self.weights.append(w)
         self.weights = np.array(self.weights)
         
@@ -76,7 +91,6 @@ class neural_network:
         ones = np.ones((x_input.shape[0],1))
         #x_input = np.append(ones,x_input,axis = 1)
         self.z = []
-        num_layers = self.num_layers
         for i in range(len(layer_shapes)):
             if(i==0):
                 self.z.append(np.array(x_input))
@@ -144,6 +158,17 @@ class neural_network:
         #     grad_lw =  np.dot((np.append(ones,self.z[i],axis=1)).T, f[i])
         #     self.weights[i] = self.weights[i] - learning_rate * grad_lw
 
+x_train = []
+with open(trainfile,'r') as filename:
+    csvreader = csv.reader(filename)
+    for row in csvreader:
+        row = [float(i) for i in row]
+        x_train.append(row)
+        
+x_train = np.array(x_train)
+y_train = x_train[:,x_train.shape[1]-1]
+x_train = x_train[:,:(x_train.shape[1]-1)]
+
 x_test = []
 with open(testfile,'r') as filename:
     csvreader = csv.reader(filename)
@@ -153,16 +178,12 @@ with open(testfile,'r') as filename:
 x_test = np.array(x_test)
 x_test = x_test[:,:(x_test.shape[1]-1)]
 
-x_train = []
-with open(trainfile,'r') as filename:
-    csvreader = csv.reader(filename)
-    for row in csvreader:
-        row = [float(i) for i in row]
-        x_train.append(row)
+normalizer = preprocessor()
+normalizer.fit(x_train)
+x_train = normalizer.normalize(x_train)
+x_test = normalizer.normalize(x_test)
 
-x_train = np.array(x_train)
-y_train = x_train[:,x_train.shape[1]-1]
-x_train = x_train[:,:(x_train.shape[1]-1)]
+
 
 num_classes = np.unique(y_train).shape[0]
 y_encoder = one_hot_encoder(np.sort(np.unique(y_train)))
