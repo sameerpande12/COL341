@@ -3,21 +3,19 @@ import numpy as np
 import sys
 
 trainfile = sys.argv[1]
-paramfile = sys.argv[2]
-weightfile = sys.argv[3]
+testfile = sys.argv[2]
+outputfile = sys.argv[3]
 
-parameters=[]
-with open(paramfile,'r')as f:
-    parameters = f.readlines()
+parameters=[2,0.5,1000,100,[10]]
 
-for i in range(4):
-    if (i==1):
-        parameters[i] = float(parameters[i].strip())
-    else:
-        parameters[i] = int(parameters[i].strip())
+# for i in range(4):
+#     if (i==1):
+#         parameters[i] = float(parameters[i].strip())
+#     else:
+#         parameters[i] = int(parameters[i].strip())
 
-parameters[4] = parameters[4].strip().split()
-parameters[4] = [int(p) for p in parameters[4]]
+# parameters[4] = parameters[4].strip().split()
+# parameters[4] = [int(p) for p in parameters[4]]
 #parameters [learning_type, learning rate/seed, max_epochs, iterations, [array of hidden layers]]
 
 
@@ -43,7 +41,12 @@ class one_hot_encoder:
 
         x_output = np.transpose(np.array(x_output))
         return x_output
-
+    def decode(self,y_encoded):
+        y_out = np.argmax(y_encoded,axis=1)
+        y_decoded = [self.labels_arr[j] for j in y_out]
+        return y_decoded
+        
+            
     # def decode(self,y_encoded):
     #     y_out = np.argmax(y_encoded,axis = 1)
     #     y_decoded = []
@@ -141,6 +144,14 @@ class neural_network:
         #     grad_lw =  np.dot((np.append(ones,self.z[i],axis=1)).T, f[i])
         #     self.weights[i] = self.weights[i] - learning_rate * grad_lw
 
+x_test = []
+with open(testfile,'r') as filename:
+    csvreader = csv.reader(filename)
+    for row in csvreader:
+        row = [float(i) for i in row]
+        x_test.append(row)
+x_test = np.array(x_test)
+x_test = x_test[:,:(x_test.shape[1]-1)]
 
 x_train = []
 with open(trainfile,'r') as filename:
@@ -183,9 +194,18 @@ for i in range(num_iters):
 
 print(num_iters)
 
-f = open(weightfile,'w+')
-for i in range(nn.weights.shape[0]):
-    for j in range(nn.weights[i].shape[0]):
-        for k in range(nn.weights[i].shape[1]):
-            f.write("{}\n".format(nn.weights[i][j][k]))
+# print(x_train.shape)
+# print(x_test.shape)
+nn.forward(x_test)
+y_pred = y_encoder.decode(nn.y_pred)
+f=open(outputfile,'w+')
+for prediction in y_pred:
+    f.write("{}\n".format(prediction))
 f.close()
+
+# f = open(weightfile,'w+')
+# for i in range(nn.weights.shape[0]):
+#     for j in range(nn.weights[i].shape[0]):
+#         for k in range(nn.weights[i].shape[1]):
+#             f.write("{}\n".format(nn.weights[i][j][k]))
+# f.close()
