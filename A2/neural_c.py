@@ -9,7 +9,36 @@ trainfile = sys.argv[1]
 testfile = sys.argv[2]
 outputfile = sys.argv[3]
 
-parameters=[1,0.5,10000,100,[10,10]]
+#################### sigmoid 
+# parameters=[1,0.5,10000,100,[100],0.1]#31
+# parameters=[1,0.5,50000,100,[100],0.1]#30.8
+# parameters=[2,0.5,10000,100,[100]]#29.1
+# parameters=[1,0.5,10000,100,[100,20],0.1]#33.78
+# parameters=[1,0.5,10000,100,[100,20],1]#15
+# parameters=[1,0.5,10000,100,[100,20],0.01]#31.62
+# parameters=[1,0.5,10000,100,[100,50],0.1]#34.02
+# parameters=[1,0.5,10000,100,[100,100],0.1]#35
+# parameters=[1,0.5,10000,300,[100,100],0.1]#30
+# parameters=[1,1,10000,100,[100,100],0.1]#33
+# parameters=[1,0.5,10000,100,[100,100],0.1]#35
+# parameters=[1,0.5,10000,100,[100,50,10],0.01]#16
+########################
+
+
+
+#######################softplus
+# parameters=[1,0.5,10000,100,[100,100],0.1]#34.44
+parameters=[1,0.5,20000,100,[100,100],0.1]#33.7
+
+#######################relu
+# parameters=[1,0.5,10000,100,[100,100],0.1]#10
+
+########################leaky_relu
+# parameters=[1,0.5,10000,100,[100,100],0.1]#31
+
+
+########################tanh
+parameters=[1,0.5,10000,100,[100,100],0.1]
 
 # for i in range(4):
 #     if (i==1):
@@ -27,8 +56,19 @@ def sigmoid (x):
     return 1/(1+np.exp(-x))
 
 def relu(x):
-    return max(x,0)
+    x[x<=0]=0
+    return x
 
+def softplus(x):
+    return np.log(1 + np.exp(x))
+
+def leaky_relu(x):
+    x[x<=0] = 0.01 * x[x<=0]
+    return x
+
+def tanh(x):
+    return np.tanh(x)
+    
 class preprocessor:
     def fit(self,x_train):
         self.mean = np.mean(x_train,axis=0)
@@ -104,7 +144,7 @@ class neural_network:
                     z_i = z_i/col
                     self.y_pred = z_i
                 else:
-                    z_i =  sigmoid(np.dot( np.append(ones,self.z[i-1],axis=1), self.weights[i-1]))
+                    z_i =  self.activation(np.dot( np.append(ones,self.z[i-1],axis=1), self.weights[i-1]))
                 self.z.append(z_i)
         
         # self.y_pred = np.exp(self.z[num_layers-1])
@@ -113,7 +153,7 @@ class neural_network:
         # self.y_pred = (self.y_pred)/col
         # self.z[num_layers-1] = self.y_pred
         
-    def backpropagate(self,y_input,learning_rate):#z_l is n X num_nodes_l
+    def backpropagate(self,y_input,learning_rate,lamda=0.1):#z_l is n X num_nodes_l
         self.grad_lz = []
         num_layers = self.num_layers
         f =[]# element wise product product grad_lz[i+1]* z[i+1]*(1-z[i+1])
@@ -132,7 +172,26 @@ class neural_network:
             elif (j==num_layers-2):
                 self.grad_lz[j] = (1.0/n)* np.dot((self.y_pred -y_input),((self.weights[j])[1:]).T)
             else:
-                f[j]=self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
+                if(self.activation == sigmoid):
+                    f[j]=self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
+                elif(self.activation == softplus):
+                    term = np.exp(self.z[j+1])
+                    f[j]=self.grad_lz[j+1] * (term - 1) / term
+                elif(self.activation == relu):
+                    grad = self.z[j+1]
+                    grad[grad > 0] = 1
+                    grad[grad == 0] = 0.5
+                    grad[grad < 0] = 0
+                    f[j]=self.grad_lz[j+1] * grad
+                elif(self.activation == leaky_relu):
+                    grad = self.z[j+1]
+                    grad[grad>0]=1
+                    grad[grad==0] = 0.5
+                    grad[grad<0]=0.01
+                    f[j]= self.grad_lz[j+1] * grad
+                elif(self.activation == tanh):
+                    grad = 1- self.z[j+1]**2
+                    f[j] = self.grad_lz[j+1]*grad
                 self.grad_lz[j] =  np.dot( f[j] ,((self.weights[j])[1:]).T)
             
         
@@ -143,6 +202,7 @@ class neural_network:
                 grad_lw = np.dot((np.append(ones,self.z[i],axis=1)).T, (self.y_pred-y_input))*(1.0/n)
             else:
                 grad_lw =  np.dot((np.append(ones,self.z[i],axis=1)).T, f[i])
+            grad_lw = grad_lw + (lamda/n)*self.weights[i]
             self.weights[i] = self.weights[i] - learning_rate * grad_lw
         # self.grad_lz[num_layers-1]= (1.0/n)*(self.y_pred - y_input)
         # for i in range(num_layers):
@@ -189,6 +249,7 @@ num_classes = np.unique(y_train).shape[0]
 y_encoder = one_hot_encoder(np.sort(np.unique(y_train)))
 y_train = y_encoder.encode(y_train)
 
+regularization_parameter = parameters[5]
 batch_size = parameters[3]
 base_rate = parameters[1]
 num_iters = parameters[2]
@@ -199,7 +260,11 @@ num_batches = (int)(x_train.shape[0]/batch_size)
 if( x_train.shape[0] > batch_size*num_batches):
     num_batches = num_batches + 1
 
-nn = neural_network(layer_shapes,sigmoid)
+# nn = neural_network(layer_shapes,sigmoid)
+# nn = neural_network(layer_shapes,softplus)
+# nn = neural_network(layer_shapes,relu)
+# nn = neural_network(layer_shapes,leaky_relu)
+nn = neural_network(layer_shapes,tanh)
 # num_iters = 1
 for i in range(num_iters):
     j = i%num_batches
@@ -211,7 +276,7 @@ for i in range(num_iters):
     learning_rate = base_rate
     if(learning_type == 2):
         learning_rate = learning_rate/np.sqrt(i+1)
-    nn.backpropagate(y,learning_rate)
+    nn.backpropagate(y,learning_rate,regularization_parameter)
 
 print(num_iters)
 
