@@ -1,15 +1,17 @@
 import csv
 import numpy as np
 import sys
-from scipy import ndimage as ndi
+from scipy import ndimage as nd
 from skimage import feature
-
-trainfile = "Neural_data/CIFAR10/train.csv"
-testfile = "Neural_data/CIFAR10/test_X.csv"
-outputfile = "output_weights.txt"
-#trainfile = sys.argv[1]
-#testfile = sys.argv[2]
-#outputfile = sys.argv[3]
+from skimage.filters import gabor_kernel
+import time
+#trainfile = "Neural_data/CIFAR10/train.csv"
+#testfile = "Neural_data/CIFAR10/test_X.csv"
+#outputfile = "output_weights.txt"
+start_time = time.time()
+trainfile = sys.argv[1]
+testfile = sys.argv[2]
+outputfile = sys.argv[3]
 
 #################### sigmoid 
 # parameters=[1,0.5,10000,100,[100],0.1]#31
@@ -209,19 +211,6 @@ class neural_network:
                 grad_lw =  np.dot((np.append(ones,self.z[i],axis=1)).T, f[i])
             grad_lw = grad_lw + (lamda/n)*self.weights[i]
             self.weights[i] = self.weights[i] - learning_rate * grad_lw
-        # self.grad_lz[num_layers-1]= (1.0/n)*(self.y_pred - y_input)
-        # for i in range(num_layers):
-        #     j = num_layers-i-1
-        #     if (j==num_layers-1):
-        #         continue
-        #     else:
-        #         f[j] = self.grad_lz[j+1] * self.z[j+1] * (1 - self.z[j+1])
-        #         self.grad_lz[j] =  np.dot( f[j] ,((self.weights[j])[1:]).T)
-        
-        # for i in range(num_layers - 1):## weights[i] is input to the ith layer
-        #     ones = np.ones((n,1))
-        #     grad_lw =  np.dot((np.append(ones,self.z[i],axis=1)).T, f[i])
-        #     self.weights[i] = self.weights[i] - learning_rate * grad_lw
 
 
 x_test = []
@@ -245,22 +234,57 @@ np.random.shuffle(x_train)
 y_train = x_train[:,x_train.shape[1]-1]
 x_train = x_train[:,:(x_train.shape[1]-1)]
 
+
+
+
+kernels = []
+for theta in range(4):
+    theta = theta / 4. * np.pi
+    for sigma in (1, 3):
+        for frequency in (0.05, 0.25):
+            kernel = np.real(gabor_kernel(frequency, theta=theta,
+                                          sigma_x=sigma, sigma_y=sigma))
+            kernels.append(kernel)
+            
+
+#x_train_reshaped = x_train.reshape(x_train.shape[0],(int)(np.sqrt(x_train.shape[1])), (int)(np.ceil(x_train.shape[1]/((int)(np.sqrt(x_train.shape[1]))))))
+gaber_train_arr = (np.array([nd.convolve(z,kernels[3],mode='wrap') for z in x_train.reshape(x_train.shape[0],(int)(np.sqrt(x_train.shape[1])), (int)(np.ceil(x_train.shape[1]/((int)(np.sqrt(x_train.shape[1]))))))])).astype(float)
+gaber_train_arr = gaber_train_arr.reshape(x_train.shape[0],x_train.shape[1])
+
+#x_test_reshaped = x_test.reshape(x_test.shape[0],(int)(np.sqrt(x_test.shape[1])), (int)(np.ceil(x_test.shape[1]/((int)(np.sqrt(x_test.shape[1]))))))
+gaber_test_arr = (np.array([nd.convolve(z,kernels[3],mode='wrap') for z in x_test.reshape(x_test.shape[0],(int)(np.sqrt(x_test.shape[1])), (int)(np.ceil(x_test.shape[1]/((int)(np.sqrt(x_test.shape[1]))))))])).astype(float)
+gaber_test_arr = gaber_test_arr.reshape(x_test.shape[0],x_test.shape[1])
+
+#x_train = gaber_train_arr
+#x_test = gaber_test_arr
+
+x_train = np.append(x_train,gaber_train_arr,axis=1)
+x_test = np.append(x_test,gaber_test_arr,axis = 1)
+
+"""
+#x_train_reshaped = x_train.reshape(x_train.shape[0],(int)(np.sqrt(x_train.shape[1])), (int)(np.ceil(x_train.shape[1]/((int)(np.sqrt(x_train.shape[1]))))))
+sobel_train_arr = (np.array([nd.sobel(z) for z in x_train.reshape(x_train.shape[0],(int)(np.sqrt(x_train.shape[1])), (int)(np.ceil(x_train.shape[1]/((int)(np.sqrt(x_train.shape[1]))))))])).astype(float)
+sobel_train_arr = sobel_train_arr.reshape(x_train.shape[0],x_train.shape[1])
+
+#x_test_reshaped = x_test.reshape(x_test.shape[0],(int)(np.sqrt(x_test.shape[1])), (int)(np.ceil(x_test.shape[1]/((int)(np.sqrt(x_test.shape[1]))))))
+sobel_test_arr = (np.array([nd.sobel(z) for z in x_test.reshape(x_test.shape[0],(int)(np.sqrt(x_test.shape[1])), (int)(np.ceil(x_test.shape[1]/((int)(np.sqrt(x_test.shape[1]))))))])).astype(float)
+sobel_test_arr = sobel_test_arr.reshape(x_test.shape[0],x_test.shape[1])
+
+#x_train = gaber_train_arr
+#x_test = gaber_test_arr
+
+x_train = np.append(x_train,sobel_train_arr,axis=1)
+x_test = np.append(x_test,sobel_test_arr,axis = 1)
 #temp = x_train.reshape(x_train.shape[0],(int)(np.sqrt(x_train.shape[1])), (int)(np.ceil(x_train.shape[1]/((int)(np.sqrt(x_train.shape[1]))))))
-#edge_arr = (np.array([feature.canny(z) for z in temp])).astype(float)
+#edge_arr = (np.array([feature.canny(z) for z in x_train.reshape(x_train.shape[0],(int)(np.sqrt(x_train.shape[1])), (int)(np.ceil(x_train.shape[1]/((int)(np.sqrt(x_train.shape[1]))))))])).astype(float)
 #edge_arr = edge_arr.reshape(x_train.shape[0],x_train.shape[1])
 #x_train = np.append(x_train,edge_arr,axis = 1)
 
 #temp = x_test.reshape(x_test.shape[0],(int)(np.sqrt(x_test.shape[1])), (int)(np.ceil(x_test.shape[1]/((int)(np.sqrt(x_test.shape[1]))))))
-#edge_arr = (np.array([feature.canny(z) for z in temp])).astype(float)
+#edge_arr = (np.array([feature.canny(z) for z in x_test.reshape(x_test.shape[0],(int)(np.sqrt(x_test.shape[1])), (int)(np.ceil(x_test.shape[1]/((int)(np.sqrt(x_test.shape[1]))))))])).astype(float)
 #edge_arr = edge_arr.reshape(x_test.shape[0],x_test.shape[1])
 #x_test = np.append(x_test,edge_arr,axis = 1)
-
-validation_split = (int)(x_train.shape[0]*0.9)
-x_train_train = x_train[:(validation_split),:]
-x_train_val = x_train[validation_split:,:] 
-
-y_train_train = y_train[:validation_split]
-y_train_val = y_train[validation_split:]
+"""
 
 
 
@@ -268,28 +292,15 @@ normalizer = preprocessor()
 normalizer.fit(x_train)
 x_train = normalizer.normalize(x_train)
 x_test = normalizer.normalize(x_test)
-x_train_train = normalizer.normalize(x_train_train)
-x_train_val = normalizer.normalize(x_train_val)
 
 
 num_classes = np.unique(y_train).shape[0]
 y_encoder = one_hot_encoder(np.sort(np.unique(y_train)))
 y_train = y_encoder.encode(y_train)
-y_train_val = y_encoder.encode(y_train_val)
-y_train_train = y_encoder.encode(y_train_train)
 
 
-#parameters=[2,1,40000,50,[100],0.1,sigmoid]
-#parameters=[1,0.01,25000,50,[100],0.1,sigmoid]
-#parameters=[2,1,20000,50,[100,100],0.1,sigmoid]
-#parameters=[2,1,20000,50,[100,100],0.1,softplus]
-parameters=[2,5,70000,100,[100],0.1,sigmoid]#31 div by epoch~ 33 div by iter
-parameters=[2,5,70000,100,[100],1,sigmoid]#bad div by epoch ~ 30 div by iter
+parameters=[2,1,15000,200,[120],0.1,softplus]
 
-
-parameters=[2,5,70000,100,[200],1,sigmoid]#bad div by epoch ~ 30 div by iter
-
-#parameters=[2,10,70000,100,[100],0.1,sigmoid]#30 div by epoch, div by iter -> overfit max 31
 
 
 activation = parameters[6]
@@ -300,19 +311,21 @@ num_iters = parameters[2]
 learning_type = parameters[0]
 layer_shapes = [x_train.shape[1]]+parameters[4]+[num_classes]
 
-num_batches = (int)(x_train_train.shape[0]/batch_size)
-if( x_train_train.shape[0] > batch_size*num_batches):
+num_batches = (int)(x_train.shape[0]/batch_size)
+if( x_train.shape[0] > batch_size*num_batches):
     num_batches = num_batches + 1
     
 nn = neural_network(layer_shapes,activation)
 
 train_val_acc = []
 for i in range(num_iters):
+    if(time.time()-start_time>540):
+        break
     j = i%num_batches
     #print(i+1)
     #for j in range(num_batches):
-    x = x_train_train[ j*batch_size : (j+1)*batch_size]
-    y = y_train_train[ j*batch_size : (j+1)*batch_size]
+    x = x_train[ j*batch_size : (j+1)*batch_size]
+    y = y_train[ j*batch_size : (j+1)*batch_size]
     
     nn.forward(x)
     learning_rate = base_rate
@@ -320,47 +333,11 @@ for i in range(num_iters):
     if(learning_type == 2):
         learning_rate = learning_rate/np.sqrt(i+1)
     nn.backpropagate(y,learning_rate,regularization_parameter)
-    if (i+1)%1000==0:    
-        x = x_train_train
-        y = y_train_train
-        nn.forward(x)
-        
-        y_train_actual = np.array(y_encoder.decode(y))
-        y_train_pred = np.array(y_encoder.decode(nn.y_pred))
-        train_accuracy = np.sum(y_train_actual == y_train_pred)/x.shape[0]
-        
-        x = x_train_val
-        y = y_train_val
-        
-        nn.forward(x)
-        y_val_actual = np.array(y_encoder.decode(y))
-        y_val_pred = np.array(y_encoder.decode(nn.y_pred))
-        val_accuracy = np.sum(y_val_pred == y_val_actual)/x.shape[0]
-        
-        train_val_acc.append([i+1,train_accuracy,val_accuracy])
-        print("iteration:{} train_acc:{} val_acc:{}".format(i+1,round(train_accuracy,3),round(val_accuracy,3)))
-    
-    
+ 
 
-#print(num_iters)
-#p = np.array(train_val_acc)
-#import matplotlib.pyplot as plt
-
-#plt.plot(p[:,0],p[:,1],label='train')
-#plt.plot(p[:,0],p[:,2],label='validation')
-#plt.show()
-# print(x_train.shape)
-# print(x_test.shape)
 nn.forward(x_test)
 y_pred = y_encoder.decode(nn.y_pred)
 f=open(outputfile,'w+')
 for prediction in y_pred:
     f.write("{}\n".format(prediction))
 f.close()
-
-# f = open(weightfile,'w+')
-# for i in range(nn.weights.shape[0]):
-#     for j in range(nn.weights[i].shape[0]):
-#         for k in range(nn.weights[i].shape[1]):
-#             f.write("{}\n".format(nn.weights[i][j][k]))
-# f.close()

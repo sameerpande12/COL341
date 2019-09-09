@@ -279,14 +279,13 @@ y_train_val = y_encoder.encode(y_train_val)
 y_train_train = y_encoder.encode(y_train_train)
 
 
-parameters=[2,5,50000,100,[100],0.1,sigmoid]
-parameters=[2,5,50000,100,[100],1,sigmoid]
+
 
 
 activations_v = [[sigmoid,"sigmoid"],[tanh,"tanh"],[softplus,"softplus"],[leaky_relu,"leaky_relu"]]
 regularizations_v = [0.01,0.1,1]
-network_architectures_v = [[50],[100],[150],[50,50],[100,100],[200,200]]
-learning_rates_v = [10,3,1,0.1,0.01]
+network_architectures_v = [[50],[100],[50,50],[100,100],[200,200]]
+learning_rates_v = [10,1,0.1,0.01]
 
 file_num = 0
 for activation_p in activations_v:
@@ -294,7 +293,7 @@ for activation_p in activations_v:
         for arch in network_architectures_v:
             for base_rate_p in learning_rates_v:
                 print("model_num:{}".format(file_num+1))
-                parameters = [2,base_rate_p,50000,100,arch,regularization_p,activation_p[0]]
+                parameters = [2,base_rate_p,15000,100,arch,regularization_p,activation_p[0]]
                 activation = parameters[6]
                 regularization_parameter = parameters[5]
                 batch_size = parameters[3]

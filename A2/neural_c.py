@@ -10,6 +10,7 @@ testfile = sys.argv[2]
 outputfile = sys.argv[3]
 
 #################### sigmoid 
+# parameters=[1,1,10000,500,[100],0.1]
 # parameters=[1,0.5,10000,100,[100],0.1]#31
 # parameters=[1,0.5,50000,100,[100],0.1]#30.8
 # parameters=[2,0.5,10000,100,[100]]#29.1
@@ -22,23 +23,43 @@ outputfile = sys.argv[3]
 # parameters=[1,1,10000,100,[100,100],0.1]#33
 # parameters=[1,0.5,10000,100,[100,100],0.1]#35
 # parameters=[1,0.5,10000,100,[100,50,10],0.01]#16
+# parameters=[1,0.5,10000,100,[200,200],0.1]#34
 ########################
 
 
 
 #######################softplus
 # parameters=[1,0.5,10000,100,[100,100],0.1]#34.44
-parameters=[1,0.5,20000,100,[100,100],0.1]#33.7
+# parameters=[1,0.5,10000,100,[200,200],0.1]#36.9
+#parameters=[1,0.5,7000,100,[200,200],0.1]#37.78#
+# parameters=[1,0.5,7000,100,[200,20],0.1]#37.78#
+# parameters=[1,0.1,10000,50,[200,200],0.1]
+#parameters = [1,0.5,3500,500,[200,200],0.1]#38.1
+#parameters = [1,0.5,3500,100,[200,200],0.1]#38.1
+parameters = [2,1,15000,200,[120],0.1]#40
+# parameters = [2,1,30000,200,[120],0.05]#40
+# parameters = [2,1,20000,200,[50],0.1]
+
+#parameters = [2,10,20000,100,[100,100],1] # 38
+
+
+# parameters=[1,0.1,7000,100,[200,200],0.1]#32
+# parameters=[1,0.5,7000,100,[200,200],0.1]
+# parameters=[1,0.5,5000,100,[200,200],0.1]#36.23
+# parameters=[1,0.5,15000,100,[200,200],0.1]#35
+# parameters=[1,0.5,10000,100,[250,250],0.1]#36.32
+# parameters=[1,0.5,20000,100,[100,100],0.1]#33.7
 
 #######################relu
 # parameters=[1,0.5,10000,100,[100,100],0.1]#10
-
+# parameters=[1,0.5,10000,100,[200,200],0.1]
 ########################leaky_relu
 # parameters=[1,0.5,10000,100,[100,100],0.1]#31
-
+# parameters=[1,0.5,10000,100,[200,200],0.1]
 
 ########################tanh
-parameters=[1,0.5,10000,100,[100,100],0.1]
+# parameters=[1,0.5,10000,100,[100,100],0.1]#33
+# parameters=[1,0.5,10000,100,[200,200],0.1]#35
 
 # for i in range(4):
 #     if (i==1):
@@ -74,12 +95,19 @@ class preprocessor:
         self.mean = np.mean(x_train,axis=0)
         self.std = np.std(x_train,axis=0)
         self.std[self.std==0] = 1
+        #self.min = np.min(x_train)
+        #self.diff = np.max(x_train) - self.min
+        #if(self.diff==0):
+        #    self.diff = 1
+        
+        
     
     def normalize(self,x):
         return (x-self.mean)/(self.std)
+        #return (x-self.min)/self.diff
     def de_normalize(self,x):
         return (x * self.std ) + self.mean
-        
+        #return (x*self.diff) + self.min
             
             
 class one_hot_encoder:
@@ -120,8 +148,9 @@ class neural_network:
         self.num_layers = len(layer_shapes)
         self.weights = []
         self.activation = activation
+        #np.random.seed(10)
         for i in range(len(layer_shapes)-1):
-            w = (np.random.random([layer_shapes[i]+1, layer_shapes[i+1]]))*np.sqrt(2)/(  layer_shapes[i] * (layer_shapes[i+1]+1))
+            w = (np.random.rand(layer_shapes[i]+1, layer_shapes[i+1]))*np.sqrt(2)/(  layer_shapes[i] * (layer_shapes[i+1]+1))
             self.weights.append(w)
         self.weights = np.array(self.weights)
         
@@ -168,7 +197,7 @@ class neural_network:
         for i in range(num_layers):
             j = num_layers-i-1
             if (j==num_layers-1):
-                self.grad_lz[j] = - (1.0/n)* (y_input/self.y_pred) 
+                self.grad_lz[j] = - (1.0/n)* (y_input/(self.y_pred+0.000000001)) 
             elif (j==num_layers-2):
                 self.grad_lz[j] = (1.0/n)* np.dot((self.y_pred -y_input),((self.weights[j])[1:]).T)
             else:
@@ -261,10 +290,10 @@ if( x_train.shape[0] > batch_size*num_batches):
     num_batches = num_batches + 1
 
 # nn = neural_network(layer_shapes,sigmoid)
-# nn = neural_network(layer_shapes,softplus)
+nn = neural_network(layer_shapes,softplus)
 # nn = neural_network(layer_shapes,relu)
 # nn = neural_network(layer_shapes,leaky_relu)
-nn = neural_network(layer_shapes,tanh)
+# nn = neural_network(layer_shapes,tanh)
 # num_iters = 1
 for i in range(num_iters):
     j = i%num_batches
@@ -278,7 +307,7 @@ for i in range(num_iters):
         learning_rate = learning_rate/np.sqrt(i+1)
     nn.backpropagate(y,learning_rate,regularization_parameter)
 
-print(num_iters)
+# print(num_iters)
 
 # print(x_train.shape)
 # print(x_test.shape)
