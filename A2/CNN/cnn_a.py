@@ -5,17 +5,17 @@ from keras.models import Sequential
 from keras.utils import to_categorical,Sequence
 from keras.layers import Dense,Conv2D,Flatten,MaxPooling2D,ZeroPadding2D,BatchNormalization,Input
 
-import pandas as pd
+#import pandas as pd
 import keras.optimizers
 import sys
         
 
-#trainfile = sys.argv[1]
-#testfile = sys.argv[2]
-#outputfile = sys.argv[3]
-trainfile = "Data/train.csv"
-testfile = "Data/test.csv"
-outputfile="Data/output.txt"
+trainfile = sys.argv[1]
+testfile = sys.argv[2]
+outputfile = sys.argv[3]
+#trainfile = "Data/train.csv"
+#testfile = "Data/test.csv"
+#outputfile="Data/output.txt"
 
 num_images = 0
 
