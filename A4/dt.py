@@ -21,11 +21,15 @@ class Node:
             self.labels
             self.children = []
             self.depth = depth
+            self.prediction = None
             
         def setLabels(self,labels,label_counts):
             self.labels = labels
             self.label_counts = label_counts
+        
             
+            
+        
         def setSplitter(self,index,numBins=5):
             self.index = index
             
@@ -36,8 +40,13 @@ class Node:
             for i in range(numChildren):
                 self.children.append(Node(self.depth+1))
         
-    
-    
+        def learnTree(self,x,index):
+            if len(self.children) == 0:
+                ###this is leaf
+                
+                
+            
+
 
 def getEntropy(y):
     unique,counts = np.unique(y,return_counts=True)
@@ -89,15 +98,33 @@ def getSplitIndex(labels,x):### x has no header. x's last column stands for outp
             
 trainfile = "DT_data/train.csv"
 x_train = []
+labels = []
 with open(trainfile,'r') as filename:
     csvreader = csv.reader(filename)
+    count = 0
     for row in csvreader:
-        x_train.append(row)
+        if(count > 0):
+            for i in range(len(labels)):
+                row[i] = row[i].strip()
+                if labels[i] in continuous:
+                    row[i] = (float)(row[i])
+                elif i == len(row) - 1:
+                    row[i] = (int)(row[i])
+                x_train.append(row)
+                
+        else:
+            labels = row
+            labels = [label.strip() for label in labels]
+            count= count + 1
 
 x_train= np.array(x_train)
 labels = x_train[0,:]
+
 x_train = x_train[1:,:]
 
 for i in range(len(labels)):
-    if labels[i] in continuous:
-        x_train[:,i] = [ (int)(x.strip()) for x in x_train[:,i]]
+#    print(labels[i])
+    x_train[:,i] = [(x.strip()) for x in x_train[:,i]]
+
+
+
