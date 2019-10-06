@@ -117,14 +117,5 @@ with open(trainfile,'r') as filename:
             labels = [label.strip() for label in labels]
             count= count + 1
 
-x_train= np.array(x_train)
-labels = x_train[0,:]
 
-x_train = x_train[1:,:]
-
-for i in range(len(labels)):
-#    print(labels[i])
-    x_train[:,i] = [(x.strip()) for x in x_train[:,i]]
-
-
-
+x_train= np.array(x_train,dtype='object')
