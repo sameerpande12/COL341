@@ -113,22 +113,25 @@ class Node:
                     
                     self.children[i].learnTree(np.array(splits[i]),maxDepth)
         
-        def predict(self,x):
+        def predictSingle(self,x):
             if self.prediction is None:
                 index = self.index
                 childNum = -1
                 if labels[index] in continuous:
                     childNum  = (self.category_boundary[index][2] - self.category_boundary[index][1])/self.category_boundary[i][0]
                 else:
-                    catIndex = self.category_boundary[index][1]
-                    childNum = catIndex[x[index]]
-                return self.children[childNum].predict(x)
+                    childNum = self.category_boundary[index][1][x[index]]
+                
+                return self.children[childNum].predictSingle(x)
             else:
                 return self.prediction
-                
-                    
+        
+        def predict(self,x_test):
+            return self.predictSingle(np.array(x_test))
+            
+                  
                         
-                
+
 
 def getEntropy(y):
     unique,counts = np.unique(y,return_counts=True)
