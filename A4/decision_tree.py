@@ -57,7 +57,7 @@ with open(trainfile,'r') as filename:
                     row[i] = (float)(row[i])
                 elif i == len(row) - 1:
                     row[i] = (int)(row[i])
-                train_data.append(row)
+            train_data.append(row)
                 
 train_data = np.array(train_data,dtype='object')
 
@@ -68,7 +68,7 @@ for heading in headings:
 column_headers = headings
 
 
-
+"""
 validationfile = 'DT_data/valid.csv'
 val_data= []
 headings = []
@@ -89,7 +89,7 @@ with open(trainfile,'r') as filename:
                     row[i] = (int)(row[i])
                 val_data.append(row)
 val_data = np.array(val_data,dtype='object')
-
+"""
 
 
 
@@ -150,7 +150,7 @@ class Node:
                 #print("hi")
                 maxIG = IG
                 maxIndex = index
-            print("index:{}, IG:{}".format(index,IG))
+            #print("index:{}, IG:{}".format(index,IG))
             
         #print("depth:{} maxIndex:{}".format(self.depth,maxIndex))
         return maxIndex
@@ -218,7 +218,7 @@ class Node:
             attribute_value = x[self.splitIndex]
             index = 0
             for i in range(len(col_types[column_headers[self.splitIndex]])):
-                if attribute_value == col_types[column_headers[self.splitIndex][i]]:
+                if attribute_value == col_types[column_headers[self.splitIndex]][i]:
                     index= i
             return index
     
@@ -230,9 +230,18 @@ class Node:
             child= self.children[self.findChildForSample(x)]
             return child.predict(x)
     def predictMany(self,x_input):
-        return self.predict(x_input)
+        return np.array([ self.predict(x) for x in x_input])
 
 root = Node(train_data,train_data.shape[1]-1,0)
-root.createTree(1)
+root.createTree(5)
 
-x = val_data[0][:-1]
+y_train_pred = root.predictMany(train_data)
+unique,counts = np.unique(y_train_pred==train_data[:,-1],return_counts=True)
+print(unique,counts)
+print(counts[1]/(np.sum(counts)))
+"""
+y_val_pred = root.predictMany(val_data)
+unique,counts = np.unique(y_val_pred==val_data[:,-1],return_counts=True)
+print(unique,counts)
+print(counts[1]/(np.sum(counts)))
+"""
