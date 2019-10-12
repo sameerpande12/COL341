@@ -68,11 +68,11 @@ for heading in headings:
 column_headers = headings
 
 
-"""
+
 validationfile = 'DT_data/valid.csv'
 val_data= []
 headings = []
-with open(trainfile,'r') as filename:
+with open(validationfile,'r') as filename:
     csvreader = csv.reader(filename)
     isFirst = True
     for row in csvreader:
@@ -87,9 +87,9 @@ with open(trainfile,'r') as filename:
                     row[i] = (float)(row[i])
                 elif i == len(row) - 1:
                     row[i] = (int)(row[i])
-                val_data.append(row)
+            val_data.append(row)
 val_data = np.array(val_data,dtype='object')
-"""
+
 
 
 
@@ -233,15 +233,15 @@ class Node:
         return np.array([ self.predict(x) for x in x_input])
 
 root = Node(train_data,train_data.shape[1]-1,0)
-root.createTree(5)
+root.createTree(10)
 
 y_train_pred = root.predictMany(train_data)
 unique,counts = np.unique(y_train_pred==train_data[:,-1],return_counts=True)
 print(unique,counts)
 print(counts[1]/(np.sum(counts)))
-"""
+
+
 y_val_pred = root.predictMany(val_data)
 unique,counts = np.unique(y_val_pred==val_data[:,-1],return_counts=True)
 print(unique,counts)
 print(counts[1]/(np.sum(counts)))
-"""
