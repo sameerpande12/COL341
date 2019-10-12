@@ -105,7 +105,8 @@ def Entropy(y):
 def InfoGain(data,splitIndex):
     IG = Entropy(data[:,-1])
     col_name = column_headers[splitIndex]
-    if col_types[heading] == 'continuous':
+    if col_types[col_name] == 'continuous':
+        
         median = np.median(data[:,splitIndex])##median splitting
         l_child = data[data[:,splitIndex]<=median]
         r_child = data[data[:,splitIndex]>median]
@@ -114,6 +115,7 @@ def InfoGain(data,splitIndex):
         p_left = l_child.shape[0]/(data.shape[0])
         p_right = 1 - p_left
         IG = IG - p_left * h_left - p_right * h_right
+        #print("splitIndex:{} l_child_shape:{} r_child_shape:{} h_left:{} h_right{}:".format(splitIndex,l_child.shape[0],r_child.shape[0],h_left,h_right))
     else:
         attributes = col_types[col_name]
         for attribute in attributes:
@@ -143,13 +145,14 @@ class Node:
         maxIG = InfoGain(data,0)
         maxIndex = 0
         for index in range(self.num_features):
-            if index == 0:
-                continue
             IG = InfoGain(data,index)
             if IG > maxIG:
+                #print("hi")
                 maxIG = IG
                 maxIndex = index
-        
+            print("index:{}, IG:{}".format(index,IG))
+            
+        #print("depth:{} maxIndex:{}".format(self.depth,maxIndex))
         return maxIndex
     
     def setSplitIndex(self):
@@ -174,21 +177,28 @@ class Node:
                     data = self.train_data[self.train_data[:,self.splitIndex]>self.continuousSplit]
                 
             else:
-                data = self.train_data[self.train_data[:,self.splitIndex]==col_types[column_headers[self.splitIndex][i]]]
+                #print(self.splitIndex,column_headers[self.splitIndex][i])
+                data = self.train_data[self.train_data[:,self.splitIndex]==col_types[column_headers[self.splitIndex]][i]]
             
             self.children.append(Node(data,self.num_features,self.depth + 1))
     
     def setLeafLabel(self):
         unique, counts = np.unique(self.train_data[:,-1],return_counts = True)
+        
         if(unique.size == 0):
             self.label = 0
+            #print("Data empty : Default Label 0")
         else:
             self.label = unique[np.argmax(counts)]
+            #print(unique,counts,"Setting label {}".format(self.label))
+            
     
     def createTree(self,maxDepth):
         if self.depth >= maxDepth:
             self.leaf = True
-            self.label = self.setLeafLabel()
+            self.setLeafLabel()
+            #print("Setting leaf label {}:".format(self.label))
+            
         elif self.train_data.shape[0] == 0:
             self.leaf = True
             self.label = 0
@@ -199,7 +209,8 @@ class Node:
                 child.createTree(maxDepth)
     def findChildForSample(self,x):
         if isContinuous(self.splitIndex):
-            if(x<=self.continuousSplit):
+            #print("{} {}\n".format(type(x[self.splitIndex]),type(self.continuousSplit)))
+            if(x[self.splitIndex]<=self.continuousSplit):
                 return 0
             else:
                 return 1
@@ -213,6 +224,7 @@ class Node:
     
     def predict(self,x):
         if self.leaf:
+            #print("Reached Leaf {}".format(self.label))
             return self.label
         else:
             child= self.children[self.findChildForSample(x)]
@@ -221,4 +233,6 @@ class Node:
         return self.predict(x_input)
 
 root = Node(train_data,train_data.shape[1]-1,0)
-root.createTree(10)
+root.createTree(1)
+
+x = val_data[0][:-1]
