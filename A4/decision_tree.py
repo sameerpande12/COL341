@@ -88,9 +88,39 @@ def Entropy(y):
     for i in range(unique.size):
         p = counts[i]/np.sum(counts)
         if p > 0:
-            h = h - p*np.log(p)
+            h = h - p*np.log2(p)
     return h
 
+
+def GainRatio(data,splitIndex):
+    ##MAKE SURE THAT DATA IS NOT EMPTY
+    return InfoGain(data,splitIndex)/IntrinsicVal(data,splitIndex)
+    
+def IntrinsicVal(data,splitIndex):
+    if(len(data)==0):
+        return 0
+    col_name = column_headers[splitIndex]
+    iv = 0
+    if col_types[col_name] == 'continuous':
+        median = np.median(data[:,splitIndex])
+        l_child = len(data[data[:,splitIndex]<=median])
+        r_child = len(data[data[:,splitIndex]>median])
+        p_left = l_child /(len(data))
+        p_right = r_child/(len(data))
+        
+        iv =  - p_left * np.log2(p_left) - p_right * np.log2(p_right)
+    
+    else:
+        attributes = col_types[col_name]
+        iv = 0
+        for attribute in attributes:
+            child = len(data[data[:,splitIndex]==attribute])
+            p_child = child/len(data)
+            if p_child > 0:
+                iv = iv - p_child * np.log2(p_child)
+        
+    return iv
+    
 def InfoGain(data,splitIndex):
     IG = Entropy(data[:,-1])
     col_name = column_headers[splitIndex]
@@ -121,7 +151,7 @@ def isContinuous(index):
     return  col_types[column_headers[index]] == 'continuous'
 
 class Node:
-    def __init__(self,train_data,num_features,depth):
+    def __init__(self,train_data,num_features,depth,selectionFunction='InfoGain'):
         #self.leaf = leaf
         self.train_data = train_data
         self.depth = depth
@@ -132,22 +162,28 @@ class Node:
         self.children = []
         self.leaf= False
         self.height = 0
+        if selectionFunction == 'InfoGain':
+            self.selectionFunction  = InfoGain
+        else:
+            self.selectionFunction = GainRatio
+            
+
     
     def getSplitIndex(self,data):## returns -1 when the data is empty or no info gain is possible
         if len(data) == 0:
             return -1
-            
-        maxIG = 0
+        
+        maxVal = 0
         maxIndex = -1
         for index in range(self.num_features):
-            IG = InfoGain(data,index)
-            if IG > maxIG:
+            Val = self.selectionFunction(data,index)
+            if Val > maxVal:
                 #print("hi")
-                maxIG = IG
+                maxVal = Val
                 maxIndex = index
             #print("index:{}, IG:{}".format(index,IG))
             
-        #print("depth:{} maxIndex:{}".format(self.depth,maxIndex))
+        
         return maxIndex
     
     def setSplitIndex(self):## sets splitIndex -1 when data is empty or no info gain possible
@@ -330,19 +366,35 @@ test_labels= np.loadtxt("DT_data/test_labels.txt",dtype=object)
 test_labels= np.array([ (int)(t) for t in test_labels],dtype=object)
 test_data[:,-1] = test_labels
         
-
+"""
 begin = time.time()
 root = Node(train_data,train_data.shape[1]-1,0)
 root.createFullTree()
 
-print("Before pruning ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
+print("Before pruning using InfoGain ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
 end = time.time()
 print("Time taken for full tree growth: {} seconds".format(end - begin))
 
 begin= time.time()
 root.prune(val_data)
 end = time.time()
-print("After pruning ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
+print("After pruning using InfoGain ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
 print("Time taken for pruning: {} seconds".format(end - begin))
 
-root.wholeAccuracy(test_data)
+
+"""
+print("========================================================================================================")
+
+begin = time.time()
+root = Node(train_data,train_data.shape[1]-1,0,'GainRatio')
+root.createFullTree()
+
+print("Before pruning using GainRatio ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
+end = time.time()
+print("Time taken for full tree growth: {} seconds".format(end - begin))
+
+begin= time.time()
+root.prune(val_data)
+end = time.time()
+print("After pruning using GainRatio ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
+print("Time taken for pruning: {} seconds".format(end - begin))
