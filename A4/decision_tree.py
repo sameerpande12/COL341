@@ -39,58 +39,46 @@ col_types={
     'Rich?':[0,1]
 }
 
+
+def readfile(trainfile):
+    train_data = []
+    headings = []
+    with open(trainfile,'r') as filename:
+        csvreader = csv.reader(filename)
+        isFirst = True
+        for row in csvreader:
+            if isFirst:
+                headings = row
+                headings = [heading.strip() for heading in headings]
+                isFirst = False
+            else:
+                for i in range(len(headings)):
+                    row[i] = row[i].strip()
+                    if col_types[headings[i]] == 'continuous':
+                        row[i] = (float)(row[i])
+                    elif i == len(row) - 1:
+                        row[i] = (int)(row[i])
+                train_data.append(row)
+                    
+    train_data = np.array(train_data,dtype='object')
+    
+    for heading in headings:
+        if not(heading in column_headers):
+            print("column headings in-accurate")
+    return (headings,train_data)
+
 trainfile = "DT_data/train.csv"
-train_data = []
-
-headings = []
-with open(trainfile,'r') as filename:
-    csvreader = csv.reader(filename)
-    isFirst = True
-    for row in csvreader:
-        if isFirst:
-            headings = row
-            headings = [heading.strip() for heading in headings]
-            isFirst = False
-        else:
-            for i in range(len(headings)):
-                row[i] = row[i].strip()
-                if col_types[headings[i]] == 'continuous':
-                    row[i] = (float)(row[i])
-                elif i == len(row) - 1:
-                    row[i] = (int)(row[i])
-            train_data.append(row)
-                
-train_data = np.array(train_data,dtype='object')
-
-for heading in headings:
-    if not(heading in column_headers):
-        print("column headings in-accurate")
+(headings,train_data) = readfile(trainfile)
 
 column_headers = headings
 
 
 
 validationfile = 'DT_data/valid.csv'
-val_data= []
-headings = []
-with open(validationfile,'r') as filename:
-    csvreader = csv.reader(filename)
-    isFirst = True
-    for row in csvreader:
-        if isFirst:
-            headings = row
-            headings = [heading.strip() for heading in headings]
-            isFirst = False
-        else:
-            for i in range(len(headings)):
-                row[i] = row[i].strip()
-                if col_types[headings[i]] == 'continuous':
-                    row[i] = (float)(row[i])
-                elif i == len(row) - 1:
-                    row[i] = (int)(row[i])
-            val_data.append(row)
-val_data = np.array(val_data,dtype='object')
+(headings,val_data) = readfile(validationfile)
 
+testfile = "DT_data/test_public.csv"
+(headings,test_data) = readfile(testfile)
 
 
 
@@ -338,19 +326,23 @@ class Node:
             
         
         
-        
+test_labels= np.loadtxt("DT_data/test_labels.txt",dtype=object)
+test_labels= np.array([ (int)(t) for t in test_labels],dtype=object)
+test_data[:,-1] = test_labels
         
 
 begin = time.time()
 root = Node(train_data,train_data.shape[1]-1,0)
 root.createFullTree()
 
-print("Before pruning ==> train acc: {} , val acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data)))
+print("Before pruning ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
 end = time.time()
 print("Time taken for full tree growth: {} seconds".format(end - begin))
 
 begin= time.time()
 root.prune(val_data)
 end = time.time()
-print("After pruning ==> train acc: {} , val acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data)))
+print("After pruning ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
 print("Time taken for pruning: {} seconds".format(end - begin))
+
+root.wholeAccuracy(test_data)
