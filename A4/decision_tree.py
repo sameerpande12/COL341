@@ -263,7 +263,7 @@ class Node:
         return np.array([ self.predict(x) for x in x_input])
     
     def createFullTree(self):
-        print(self.depth)
+        #print(self.depth)
         self.setSplitIndex()
         if self.splitIndex == -1: ## the case when data is empty or no benefit upon splitting
             self.leaf = True
@@ -293,8 +293,10 @@ class Node:
     
     def wholeAccuracy(self,input_data):
         return self.getAccuracy(input_data[:,:-1],input_data[:,-1])
-        
+    
+    
         
 
 root = Node(train_data,train_data.shape[1]-1,0)
 root.createFullTree()
+print("Code here just before adding pruning")
