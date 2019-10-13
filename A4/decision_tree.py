@@ -126,7 +126,10 @@ def InfoGain(data,splitIndex):
     return IG
 
 def isContinuous(index):
-    return col_types[column_headers[index]] == 'continuous'
+    if index < 0 or index >= len(column_headers):
+        return False
+    
+    return  col_types[column_headers[index]] == 'continuous'
 
 class Node:
     def __init__(self,train_data,num_features,depth):
@@ -137,13 +140,16 @@ class Node:
         self.splitIndex = 1
         self.continuousSplit = None
         self.label = None
+        self.children = []
         self.leaf= False
-    
+        self.height = 0
     
     def getSplitIndex(self,data):
-        
-        maxIG = InfoGain(data,0)
-        maxIndex = 0
+        if len(data) == 0:
+            return -1
+            
+        maxIG = 0
+        maxIndex = -1
         for index in range(self.num_features):
             IG = InfoGain(data,index)
             if IG > maxIG:
@@ -157,12 +163,20 @@ class Node:
     
     def setSplitIndex(self):
         index = self.getSplitIndex(self.train_data)
-        if isContinuous(index):
-            self.continuousSplit = np.median(self.train_data[:,index])
-        self.splitIndex = index
+        if index>-1:
+            if isContinuous(index):
+                self.continuousSplit = np.median(self.train_data[:,index])
+            self.splitIndex = index
+        else:
+            self.splitIndex = index
     
     def createChildren(self):##make sure tocall this only after split index has been set
-        if isContinuous(self.splitIndex):
+        if self.splitIndex == -1:## no need to split
+            self.numChildren = 0
+            self.children = []
+            self.leaf = True
+            
+        elif isContinuous(self.splitIndex):
             self.numChildren = 2
         else:
             self.numChildren = len(col_types[column_headers[self.splitIndex]])
@@ -201,12 +215,24 @@ class Node:
             
         elif self.train_data.shape[0] == 0:
             self.leaf = True
-            self.label = 0
+            self.setLeafLabel()
+            
         else:
             self.setSplitIndex()
-            self.createChildren()
+            if self.splitIndex == -1:
+                unique, counts = np.unique(train_data[:,-1],return_counts = True)## train_data is not of length zero guaranateed here
+                self.leaf = True
+                self.setLeafLabel()
+                
+            self.createChildren()## creates zero children if self.splitIndex== -1
+            maxheight = -1
             for child in self.children:
                 child.createTree(maxDepth)
+                if child.height > maxheight:
+                    maxheight = child.height
+            self.height = maxheight + 1
+            
+            
     def findChildForSample(self,x):
         if isContinuous(self.splitIndex):
             #print("{} {}\n".format(type(x[self.splitIndex]),type(self.continuousSplit)))
@@ -231,9 +257,11 @@ class Node:
             return child.predict(x)
     def predictMany(self,x_input):
         return np.array([ self.predict(x) for x in x_input])
+    
+        
 
 root = Node(train_data,train_data.shape[1]-1,0)
-root.createTree(10)
+root.createTree(5)
 
 y_train_pred = root.predictMany(train_data)
 unique,counts = np.unique(y_train_pred==train_data[:,-1],return_counts=True)
