@@ -1,5 +1,6 @@
 import numpy as np
 import csv
+import time
 column_headers = ['Age', 'Work Class', 'Fnlwgt', 'Education', 'Education Number',
        'Marital Status', 'Occupation', 'Relationship', 'Race', 'Sex',
        'Capital Gain', 'Capital Loss', 'Hour per Week',
@@ -295,8 +296,60 @@ class Node:
         return self.getAccuracy(input_data[:,:-1],input_data[:,-1])
     
     
+    
+    def prune(self,prune_data):
+        if self.leaf:
+            return 
+        if len(prune_data) == 0:
+            return ## since you don't have pruning data don't prune this part
+        
+        
+        continuous= isContinuous(self.splitIndex)#splitIndex can't be -1 over heres
+        
+        for i in range(len(self.children)):
+            if continuous:
+                if i == 0:
+                    child_prune_data = prune_data[prune_data[:,self.splitIndex]<=self.continuousSplit]
+                else:
+                    child_prune_data = prune_data[prune_data[:,self.splitIndex]>self.continuousSplit]
+                
+            else:
+                child_prune_data = prune_data[prune_data[:,self.splitIndex]==col_types[column_headers[self.splitIndex]][i]]
+            
+            child = self.children[i]
+            child.prune(child_prune_data)    
+            
+        unmerged_acc = self.wholeAccuracy(prune_data)
+        unique,counts = np.unique(self.train_data,return_counts = True)##won't throw error since if train_data shape were zero it would have been categorized as leaf
+        
+        label_merged = unique(np.argmax(counts))
+        
+        merged_correct = np.sum((prune_data[:,-1] == label_merged).astype(int))
+        merged_acc = merged_correct/(len(prune_data)) ## WHAT IF PRUNE_DATA LENGTH IS ZERO
+        
+        if merged_acc > unmerged_acc:
+            self.leaf = True
+            self.label = label_merged
+            self.children = []
+            self.numChildren = 0
+            
+        
+        return
+            
+        
+        
+        
         
 
+begin = time.time()
 root = Node(train_data,train_data.shape[1]-1,0)
 root.createFullTree()
-print("Code here just before adding pruning")
+
+print("Before pruning ==> train acc: {} , val acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data)))
+end = time.time()
+print("Time taken for full tree growth: {} seconds".format(end - begin))
+
+begin= time.time()
+root.prune()
+end = time.time()
+print("Time taken for pruning: {} seconds".format(end - begin))
