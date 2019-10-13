@@ -144,7 +144,7 @@ class Node:
         self.leaf= False
         self.height = 0
     
-    def getSplitIndex(self,data):
+    def getSplitIndex(self,data):## returns -1 when the data is empty or no info gain is possible
         if len(data) == 0:
             return -1
             
@@ -161,7 +161,7 @@ class Node:
         #print("depth:{} maxIndex:{}".format(self.depth,maxIndex))
         return maxIndex
     
-    def setSplitIndex(self):
+    def setSplitIndex(self):## sets splitIndex -1 when data is empty or no info gain possible
         index = self.getSplitIndex(self.train_data)
         if index>-1:
             if isContinuous(index):
@@ -197,6 +197,10 @@ class Node:
             self.children.append(Node(data,self.num_features,self.depth + 1))
     
     def setLeafLabel(self):
+        
+        if(len(self.train_data)==0):
+            self.label = 0
+            return
         unique, counts = np.unique(self.train_data[:,-1],return_counts = True)
         
         if(unique.size == 0):
@@ -258,18 +262,38 @@ class Node:
     def predictMany(self,x_input):
         return np.array([ self.predict(x) for x in x_input])
     
+    def createFullTree(self):
+        self.setSplitIndex()
+        if self.splitIndex == -1: ## the case when data is empty or no benefit upon splitting
+            self.leaf = True
+            self.setLeafLabel()
+            self.height = 0
+        else:
+            self.createChildren()
+            maxheight = -1
+            for child in self.children:
+                child.createFullTree()
+                if child.height > maxheight:
+                    maxheight = child.height
+            
+            self.height = maxheight + 1
+    
+    def getAccuracy(self,x,y):
+        y_pred = self.predictMany(x)
+        unique,counts = np.unique(y_pred == y,return_counts = True)
+        if np.array_equal(unique,[True]):
+            return 1
+        elif np.array_equal(unique,[False]):
+            return 0
+        elif np.array_equal(unique,[True,False]):
+            return counts[0]/(np.sum(counts))
+        else:
+            return counts[1]/(np.sum(counts))
+    
+    def wholeAccuracy(self,input_data):
+        return self.getAccuracy(input_data[:,:-1],input_data[:,-1])
+        
         
 
 root = Node(train_data,train_data.shape[1]-1,0)
 root.createTree(5)
-
-y_train_pred = root.predictMany(train_data)
-unique,counts = np.unique(y_train_pred==train_data[:,-1],return_counts=True)
-print(unique,counts)
-print(counts[1]/(np.sum(counts)))
-
-
-y_val_pred = root.predictMany(val_data)
-unique,counts = np.unique(y_val_pred==val_data[:,-1],return_counts=True)
-print(unique,counts)
-print(counts[1]/(np.sum(counts)))
