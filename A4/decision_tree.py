@@ -263,6 +263,7 @@ class Node:
         return np.array([ self.predict(x) for x in x_input])
     
     def createFullTree(self):
+        print(self.depth)
         self.setSplitIndex()
         if self.splitIndex == -1: ## the case when data is empty or no benefit upon splitting
             self.leaf = True
@@ -296,4 +297,4 @@ class Node:
         
 
 root = Node(train_data,train_data.shape[1]-1,0)
-root.createTree(5)
+root.createFullTree()
