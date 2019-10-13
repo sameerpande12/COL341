@@ -320,9 +320,9 @@ class Node:
             child.prune(child_prune_data)    
             
         unmerged_acc = self.wholeAccuracy(prune_data)
-        unique,counts = np.unique(self.train_data,return_counts = True)##won't throw error since if train_data shape were zero it would have been categorized as leaf
+        unique,counts = np.unique(self.train_data[:,-1],return_counts = True)##won't throw error since if train_data shape were zero it would have been categorized as leaf
         
-        label_merged = unique(np.argmax(counts))
+        label_merged = unique[np.argmax(counts)]
         
         merged_correct = np.sum((prune_data[:,-1] == label_merged).astype(int))
         merged_acc = merged_correct/(len(prune_data)) ## WHAT IF PRUNE_DATA LENGTH IS ZERO
@@ -350,6 +350,7 @@ end = time.time()
 print("Time taken for full tree growth: {} seconds".format(end - begin))
 
 begin= time.time()
-root.prune()
+root.prune(val_data)
 end = time.time()
+print("After pruning ==> train acc: {} , val acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data)))
 print("Time taken for pruning: {} seconds".format(end - begin))
