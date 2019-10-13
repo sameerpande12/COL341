@@ -83,6 +83,9 @@ testfile = "DT_data/test_public.csv"
 
 
 def Entropy(y):
+    #print("Entropy")
+    if len(y)==0:
+        return 0
     unique,counts = np.unique(y,return_counts=True)
     h = 0
     for i in range(unique.size):
@@ -91,10 +94,25 @@ def Entropy(y):
             h = h - p*np.log2(p)
     return h
 
+def Gini(y):
+    
+    if len(y) == 0:
+        return 0
+    unique,counts = np.unique(y,return_counts = True)
+    g = 0
+    probs = counts/np.sum(counts)
+    g = 1 - np.sum(probs ** 2)
+    return g
+        
+        
+            
 
-def GainRatio(data,splitIndex):
+def GainRatio(data,splitIndex,impurityFunction):
     ##MAKE SURE THAT DATA IS NOT EMPTY
-    return InfoGain(data,splitIndex)/IntrinsicVal(data,splitIndex)
+    #print("Using GainRatio")
+    iv = IntrinsicVal(data,splitIndex)
+    
+    return InfoGain(data,splitIndex,impurityFunction)/iv
     
 def IntrinsicVal(data,splitIndex):
     if(len(data)==0):
@@ -121,16 +139,17 @@ def IntrinsicVal(data,splitIndex):
         
     return iv
     
-def InfoGain(data,splitIndex):
-    IG = Entropy(data[:,-1])
+def InfoGain(data,splitIndex,impurityFunction):
+    #print(impurityFunction)
+    IG = impurityFunction(data[:,-1])
     col_name = column_headers[splitIndex]
     if col_types[col_name] == 'continuous':
         
         median = np.median(data[:,splitIndex])##median splitting
         l_child = data[data[:,splitIndex]<=median]
         r_child = data[data[:,splitIndex]>median]
-        h_left = Entropy(l_child[:,-1])
-        h_right = Entropy(r_child[:,-1])
+        h_left = impurityFunction(l_child[:,-1])
+        h_right = impurityFunction(r_child[:,-1])
         p_left = l_child.shape[0]/(data.shape[0])
         p_right = 1 - p_left
         IG = IG - p_left * h_left - p_right * h_right
@@ -139,7 +158,7 @@ def InfoGain(data,splitIndex):
         attributes = col_types[col_name]
         for attribute in attributes:
             child = data[data[:,splitIndex]==attribute]
-            h_child = Entropy(child[:,-1])
+            h_child = impurityFunction(child[:,-1])
             p_child = child.shape[0]/data.shape[0]
             IG = IG - p_child * h_child
     return IG
@@ -151,7 +170,7 @@ def isContinuous(index):
     return  col_types[column_headers[index]] == 'continuous'
 
 class Node:
-    def __init__(self,train_data,num_features,depth,selectionFunction='InfoGain'):
+    def __init__(self,train_data,num_features,depth,purityFactors):
         #self.leaf = leaf
         self.train_data = train_data
         self.depth = depth
@@ -162,12 +181,22 @@ class Node:
         self.children = []
         self.leaf= False
         self.height = 0
+        self.purityFactors = purityFactors
+        selectionFunction = purityFactors[0]
         if selectionFunction == 'InfoGain':
             self.selectionFunction  = InfoGain
-        else:
+        elif selectionFunction == 'GainRatio':
             self.selectionFunction = GainRatio
-            
-
+        else:
+            self.selectionFunction = Entropy
+        
+        impurityFunction = purityFactors[1]
+        if impurityFunction == 'Entropy':
+            self.impurityFunction = Entropy
+        elif impurityFunction == 'Gini':
+            self.impurityFunction = Gini
+        else:
+            self.impurityFunction = Entropy
     
     def getSplitIndex(self,data):## returns -1 when the data is empty or no info gain is possible
         if len(data) == 0:
@@ -176,7 +205,7 @@ class Node:
         maxVal = 0
         maxIndex = -1
         for index in range(self.num_features):
-            Val = self.selectionFunction(data,index)
+            Val = self.selectionFunction(data,index,self.impurityFunction)
             if Val > maxVal:
                 #print("hi")
                 maxVal = Val
@@ -219,7 +248,7 @@ class Node:
                 #print(self.splitIndex,column_headers[self.splitIndex][i])
                 data = self.train_data[self.train_data[:,self.splitIndex]==col_types[column_headers[self.splitIndex]][i]]
             
-            self.children.append(Node(data,self.num_features,self.depth + 1))
+            self.children.append(Node(data,self.num_features,self.depth + 1,self.purityFactors))
     
     def setLeafLabel(self):
         
@@ -366,19 +395,19 @@ test_labels= np.loadtxt("DT_data/test_labels.txt",dtype=object)
 test_labels= np.array([ (int)(t) for t in test_labels],dtype=object)
 test_data[:,-1] = test_labels
         
-"""
+
 begin = time.time()
-root = Node(train_data,train_data.shape[1]-1,0)
+root = Node(train_data,train_data.shape[1]-1,0,('GainRatio','Entropy'))
 root.createFullTree()
 
-print("Before pruning using InfoGain ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
+print("Before pruning ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
 end = time.time()
 print("Time taken for full tree growth: {} seconds".format(end - begin))
 
 begin= time.time()
 root.prune(val_data)
 end = time.time()
-print("After pruning using InfoGain ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
+print("After pruning  ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
 print("Time taken for pruning: {} seconds".format(end - begin))
 
 
@@ -398,3 +427,4 @@ root.prune(val_data)
 end = time.time()
 print("After pruning using GainRatio ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
 print("Time taken for pruning: {} seconds".format(end - begin))
+"""
