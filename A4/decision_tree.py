@@ -348,6 +348,17 @@ class Node:
     def wholeAccuracy(self,input_data):
         return self.getAccuracy(input_data[:,:-1],input_data[:,-1])
     
+    def updateHeight(self):
+        if self.leaf:
+            self.height = 0
+        else:
+            maxheight = -1
+            for child in self.children:
+                child.updateHeight()
+                if child.height > maxheight:
+                    maxheight = child.height
+            
+            self.height = maxheight + 1
     
     
     def prune(self,prune_data):
@@ -406,6 +417,7 @@ print("Time taken for full tree growth: {} seconds".format(end - begin))
 
 begin= time.time()
 root.prune(val_data)
+root.updateHeight()
 end = time.time()
 print("After pruning  ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
 print("Time taken for pruning: {} seconds".format(end - begin))

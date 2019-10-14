@@ -172,6 +172,7 @@ def isContinuous(index):
 class Node:
     def __init__(self,train_data,num_features,depth,purityFactors):
         #self.leaf = leaf
+        self.nodeCount = 1
         self.train_data = train_data
         self.depth = depth
         self.num_features = num_features
@@ -288,6 +289,9 @@ class Node:
                 child.createTree(maxDepth)
                 if child.height > maxheight:
                     maxheight = child.height
+                
+                self.nodeCount = self.nodeCount + child.nodeCount##to update the node count
+                
             self.height = maxheight + 1
             
             
@@ -349,6 +353,27 @@ class Node:
         return self.getAccuracy(input_data[:,:-1],input_data[:,-1])
     
     
+    def updateHeight(self):
+        if self.leaf:
+            self.height = 0
+        else:
+            maxheight = -1
+            for child in self.children:
+                child.updateHeight()
+                if child.height > maxheight:
+                    maxheight = child.height
+            
+            self.height = maxheight + 1
+    
+    def updateNodeCount(self):
+        if self.leaf:
+            self.nodeCount = 1
+        else:
+            self.nodeCount = 1
+            for child in self.children:
+                child.updateNodeCount()
+                self.nodeCount = self.nodeCount + child.nodeCount
+            
     
     def prune(self,prune_data):
         if self.leaf:
@@ -394,8 +419,24 @@ class Node:
 test_labels= np.loadtxt("DT_data/test_labels.txt",dtype=object)
 test_labels= np.array([ (int)(t) for t in test_labels],dtype=object)
 test_data[:,-1] = test_labels
-        
+   
 
+
+depths = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+f = open("data_customTree_InfoGain_Entropy.csv",'w+')
+f.write("Depth,Nodes,train_acc,val_acc,test_acc\n")
+begin = time.time()
+for depth in depths:
+    
+    root = Node(train_data,train_data.shape[1]-1,0,('InfoGain','Entropy'))
+    root.createTree(depth)
+    print("MaxDepth:{},Cumulative Time elapsed:{}".format(depth,time.time()-begin))
+    train_acc,val_acc,test_acc = root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)
+    f.write("{},{},{},{},{}\n".format(root.nodeCount,root.height,train_acc,val_acc,test_acc))
+    
+    
+f.close()
+"""
 begin = time.time()
 root = Node(train_data,train_data.shape[1]-1,0,('GainRatio','Entropy'))
 root.createFullTree()
@@ -408,23 +449,5 @@ begin= time.time()
 root.prune(val_data)
 end = time.time()
 print("After pruning  ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
-print("Time taken for pruning: {} seconds".format(end - begin))
-
-
-"""
-print("========================================================================================================")
-
-begin = time.time()
-root = Node(train_data,train_data.shape[1]-1,0,'GainRatio')
-root.createFullTree()
-
-print("Before pruning using GainRatio ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
-end = time.time()
-print("Time taken for full tree growth: {} seconds".format(end - begin))
-
-begin= time.time()
-root.prune(val_data)
-end = time.time()
-print("After pruning using GainRatio ==> train acc: {} , val acc: {}, test acc: {}".format(root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))
 print("Time taken for pruning: {} seconds".format(end - begin))
 """
