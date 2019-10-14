@@ -39,6 +39,8 @@ col_types={
     'Rich?':[0,1]
 }
 
+pruneDataFile = "data_prune.csv"
+pruneFile = open(pruneDataFile,'w+')
 
 def readfile(trainfile):
     train_data = []
@@ -412,8 +414,8 @@ class Node:
             self.numChildren = 0
             
             root.updateNodeCount()
-            root.wholeAccuracy(val_data)
             
+            pruneFile.write("{},{},{},{}\n".format(root.nodeCount,root.wholeAccuracy(train_data),root.wholeAccuracy(val_data),root.wholeAccuracy(test_data)))    
         
         return
             
@@ -424,7 +426,17 @@ test_labels= np.array([ (int)(t) for t in test_labels],dtype=object)
 test_data[:,-1] = test_labels
    
 
+root = Node(train_data,train_data.shape[1]-1,0,('InfoGain','Gini'))
 
+root.createFullTree()
+print("Done creating full tree")
+root.prune(val_data)
+root.updateNodeCount()
+root.updateHeight()
+pruneFile.close()
+
+
+"""
 depths = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 f = open("data_customTree_InfoGain_Gini.csv",'w+')
 f.write("Depth,Nodes,train_acc,val_acc,test_acc\n")
@@ -476,7 +488,7 @@ for depth in depths:
     
     
 f.close()
-
+"""
 
 
 """
