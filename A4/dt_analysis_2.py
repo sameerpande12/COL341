@@ -80,7 +80,7 @@ validationfile = 'DT_data/valid.csv'
 testfile = "DT_data/test_public.csv"
 (headings,test_data) = readfile(testfile)
 
-
+root = None##definition
 
 def Entropy(y):
     #print("Entropy")
@@ -410,6 +410,9 @@ class Node:
             self.label = label_merged
             self.children = []
             self.numChildren = 0
+            
+            root.updateNodeCount()
+            root.wholeAccuracy(val_data)
             
         
         return
