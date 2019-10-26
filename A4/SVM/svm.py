@@ -32,7 +32,7 @@ class SVM:
         
         for t in range(1,T+1):
             if(t % 1000 == 0):
-                print(t)
+                print("     {}".format(t))
             A = np.random.choice(x.shape[0],k,replace=False)
             yi_xi = np.zeros(x.shape[1])
             yi = 0
@@ -54,20 +54,32 @@ class SVM:
         pred = [ np.dot(s,self.weights) + self.b for s in prediction_set]
         pred = [ self.label1 if p < 0 else 1 for p in pred]
         return pred
-"""
-y_labels = np.unique(train_data[:,-1])
+
+y_labels = np.sort(np.unique(train_data[:,-1]))
 
 svm_classifiers = []
 numFeatures = train_data.shape[1]-1
 for i in range(0,len(y_labels)):
     for j in range(i+1,len(y_labels)):
+        #print( "SVM CLASSIFIER #{}".format(i * len(y_labels)  + j + 1))
         svm = SVM(y_labels[i],y_labels[j])
         train_set = train_data[  np.logical_or(train_data[:,numFeatures] == 0,train_data[:,numFeatures]==1)]
-        svm.train(train_set[:,:numFeatures],train_set[:,numFeatures])
+        svm.train(train_set[:,:numFeatures],train_set[:,numFeatures],1,1000,200)
         svm_classifiers.append(svm)
-"""        
         
+
+def predict_sample(x,svm_classifiers,y_labels):
+    count = {}
+    for label in y_labels:
+        count[label] = 0
+    for svm in svm_classifiers:
+        value = svm.predict(x)
+        count [value[0]] = count[value[0]] + 1
+    
+    return max(count,key = lambda k : count[k])
+    
         
+        """
 set1 = train_data[  np.logical_or(train_data[:,784] == 0,train_data[:,784]==1)]
 svm = SVM(0,1)
 svm.train(set1[:,:784],set1[:,784],1,1000,200)
@@ -78,3 +90,4 @@ count = 0
 for i in range(len(y)):
     if y[i] == set1[i,-1]:
         count = count + 1
+"""
