@@ -29,7 +29,7 @@ class SVM:
         b = self.b
         
         y = np.array([-1 if element == self.label1 else 1 for element in y])
-        x_prod_y =  np.array([y]).T * x 
+         
         
         
         
@@ -37,17 +37,26 @@ class SVM:
             if(t % 1000 == 0):
                 print(t)
             A = np.random.choice(x.shape[0],k,replace=False)
-            A_t = [ a for a in A if   y[a] * (np.dot(w,x[a]) + b) < 1 ]
+            yi_xi = np.zeros(x.shape[1])
+            yi = 0
+            for a in A:
+                if 1 - y[a]*(np.dot(w,x[a]) + b) > 0:
+                    yi_xi = yi_xi + y[a] * x[a]
+                    yi = yi + y[a]
+             
+            w = w * ( 1 - 1/t) + 1/(reg*k*t) * yi_xi
+            b = b + 1/(reg* k * t) * yi
             
-            learning_rate = 1/(reg * t)
-            w =  (1 - learning_rate * t)  * w + learning_rate/k * np.sum(x_prod_y[A_t],axis = 0)
-            b = ( 1 - learning_rate * t)  * b + learning_rate/k * np.sum(y[A_t])
-        
         self.weights = w
         self.b = b
 
 set1 = train_data[  np.logical_or(train_data[:,784] == 0,train_data[:,784]==1)]
 svm = SVM(0,1)
-svm.train(set1[:,:784],set1[:,784])
+svm.train(set1[:,:784],set1[:,784],10000)
 pred = [ np.dot(s[:784],svm.weights) for s in set1]
 
+y = [ 0 if p < 0 else 1 for p in pred]
+count = 0
+for i in range(len(y)):
+    if y[i] == set1[i,-1]:
+        count = count + 1
