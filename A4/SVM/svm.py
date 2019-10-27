@@ -65,7 +65,7 @@ for i in range(0,len(y_labels)):
         print("Training svm classifier number for labels : {} {}".format(y_labels[i],y_labels[j]))
         svm = SVM(y_labels[i],y_labels[j])
         train_set = train_data[  np.logical_or(train_data[:,numFeatures] == y_labels[i],train_data[:,numFeatures]==y_labels[j])]
-        svm.train(train_set[:,:numFeatures],train_set[:,numFeatures],1,2000,200)
+        svm.train(train_set[:,:numFeatures],train_set[:,numFeatures],1,10000,200)
         svm_classifiers.append(svm)
         
 
