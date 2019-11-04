@@ -2,9 +2,16 @@
 
 import numpy as np
 from matplotlib import pyplot as plt
-train_data = np.loadtxt( "SVM_data/train.csv",delimiter=',')
-test_data = np.loadtxt("SVM_data/test_public.csv",delimiter=',')
-test_labels = np.loadtxt("SVM_data/test_labels.txt")
+import sys
+trainfile = sys.argv[1]
+testfile = sys.argv[2]
+train_data = np.loadtxt( trainfile,delimiter=',')
+test_data = np.loadtxt(testfile,delimiter=',')
+# test_labels = np.loadtxt("SVM_data/test_labels.txt")
+
+# train_data = np.loadtxt( "SVM_data/train.csv",delimiter=',')
+# test_data = np.loadtxt("SVM_data/test_public.csv",delimiter=',')
+# test_labels = np.loadtxt("SVM_data/test_labels.txt")
 
 
 class SVM:
@@ -62,7 +69,7 @@ numFeatures = train_data.shape[1]-1
 for i in range(0,len(y_labels)):
     for j in range(i+1,len(y_labels)):
         #print( "SVM CLASSIFIER #{}".format(i * len(y_labels)  + j + 1))
-        print("Training svm classifier number for labels : {} {}".format(y_labels[i],y_labels[j]))
+        # print("Training svm classifier number for labels : {} {}".format(y_labels[i],y_labels[j]))
         svm = SVM(y_labels[i],y_labels[j])
         train_set = train_data[  np.logical_or(train_data[:,numFeatures] == y_labels[i],train_data[:,numFeatures]==y_labels[j])]
         svm.train(train_set[:,:numFeatures],train_set[:,numFeatures],600,3000,200)
@@ -91,19 +98,22 @@ for i in range(len(train_data)):
         count = count+ 1
     #print("{} : correct =  {}, predicted = {}".format(i+1,accurate_label,predicted_label))
 
-print("accuracy: {}".format(100 * count/len(train_data)))
+# print("accuracy: {}".format(100 * count/len(train_data)))
 
 
-test_data[:,-1] = test_labels
+# test_data[:,-1] = test_labels
 
 count = 0
+outputfilename = sys.argv[3]
+outputfile = open(outputfilename,'w+')
 for i in range(len(test_data)):
     
     x = test_data[i,:-1]
     accurate_label = test_data[i,-1]
     
     predicted_label = (int)(predict_sample(x))
-    if accurate_label == predicted_label:
-        count = count+ 1    
+    outputfile.write("{}\n".format(predicted_label))
+    # if accurate_label == predicted_label:
+        # count = count+ 1    
 
-print("accuracy: {}".format(100 * count/len(test_data)))
+# print("accuracy: {}".format(100 * count/len(test_data)))
