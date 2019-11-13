@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 import pandas as pd
-import time
+#import time
 def cleanse_String(line):
     line = line.strip()
     line =  line.replace('.',' ') 
@@ -110,7 +110,8 @@ for word in all_words:
 def getLogProb(line,pred):###P(line/y)
     line = cleanse_String(line)
     words = line.split()
-    
+    words = np.unique(np.array(words))
+    answer = 0.0
     """
     for word in words:
         if pred==1:
@@ -118,19 +119,28 @@ def getLogProb(line,pred):###P(line/y)
         else:
             answer = answer + np.log(phi_neg(word))
     """
-    
-    if pred == 1:
-        answer = phi_pos_complement_sum
-    else:
-        answer = phi_neg_complement_sum
-    
-    for word in words:
+    """
+    for word in all_words:
         if word in words:
             if pred == 1:
-                answer = answer - np.log( 1- phi_pos(word)) + np.log(phi_pos(word))
+                answer = answer + np.log(phi_pos(word))
             else:
-                answer = answer - np.log(1-phi_neg(word)) + np.log(phi_neg(word))
-        
+                answer = answer + np.log(phi_neg(word))
+        else:
+            if pred == 1:
+                answer = answer + np.log( 1- phi_pos(word))
+            else:
+                answer = answer + np.log( 1- phi_neg(word))
+    """
+    
+    if pred==1:
+        answer = phi_pos_complement_sum
+        for word in words:
+            answer = answer + np.log(phi_pos(word)) - np.log(1-phi_pos(word))
+    else:
+        answer = phi_neg_complement_sum
+        for word in words:
+            answer = answer + np.log(phi_neg(word)) - np.log(1-phi_neg(word))
      
             
     return answer
@@ -145,7 +155,7 @@ def predict(line):
     else:
         return 0
     
-
+"""
 correct = 0
 count = 0
 
@@ -166,15 +176,16 @@ accuracy = correct/(len(x_train))
 end = time.time()
 
 print(end - begin)
-
 """
-testfilename = sys.argv[2]
-#testfilename = 'testdata.csv'
+
+
+#testfilename = sys.argv[2]
+testfilename = 'testdata.csv'
 x_test = pd.read_csv(testfilename,sep=',').values
 
 
-outputfile = sys.argv[3]
-#outputfile = 'output.txt'
+#outputfile = sys.argv[3]
+outputfile = 'output.txt'
 
 f = open(outputfile,'w+')
 count = 0
@@ -185,7 +196,7 @@ for i in range(len(x_test)):
     count = count + 1
     #print(count)
 f.close()
-"""
+
 
     
 """
