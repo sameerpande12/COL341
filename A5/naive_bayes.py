@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import pandas as pd
 def cleanse_String(line):
     line = line.strip()
     line =  line.replace('.',' ') 
@@ -20,18 +21,24 @@ def cleanse_String(line):
     return line
 
 
-#trainfile = sys.argv[1]
-trainfile = 'traindata.csv'
-f = open(trainfile)
-lines = [ line.strip() for line in f.readlines()]
-lines = lines[1:]
-lines = [ cleanse_String(line) for line in lines]
+trainfile = sys.argv[1]
+#trainfile = 'traindata.csv'
+
+x_train = pd.read_csv(trainfile,sep=',',dtype=str).values
+x_train = x_train[1:]
+for i in range(len(x_train)):
+    x_train[i][0] = cleanse_String(x_train[i][0])
+
+#f = open(trainfile)
+#lines = [ line.strip() for line in f.readlines()]
+#lines = lines[1:]
+#lines = [ cleanse_String(line) for line in lines]
 
 
-x_train=[]
-for line in lines:
-    x_train.append([line[1:-10],line[-8:]])
-x_train = np.array(x_train)
+#x_train=[]
+#for line in lines:
+#    x_train.append([line[1:-10],line[-8:]])
+#x_train = np.array(x_train)
 
 positive = x_train[x_train[:,-1]=='positive']
 negative = x_train[x_train[:,-1]=='negative']
@@ -45,7 +52,7 @@ prob_pos = len(positive)/(len(positive) + len(negative))
 prob_neg = 1- prob_pos
 
 
-all_words = {}
+#all_words = {}
 pos_dict = {}
 
 for( line,pred ) in positive:
@@ -53,7 +60,7 @@ for( line,pred ) in positive:
     
     unique_words = np.unique(np.array(words))
     for word in unique_words:
-        all_words[word] = 1
+        #all_words[word] = 1
         if not(word in pos_dict):
             pos_dict[word] = 1
         else:
@@ -65,7 +72,7 @@ for( line,pred ) in negative:
     words = line.split()
     unique_words = np.unique(np.array(words))
     for word in unique_words:
-        all_words[word]=1
+        #all_words[word]=1
         if not(word in pos_dict):
             neg_dict[word] = 1
         else:
@@ -91,6 +98,12 @@ def getLogProb(line,pred):###P(line/y)
     line = cleanse_String(line)
     words = line.split()
     answer = 0.0
+    for word in words:
+        if pred==1:
+            answer = answer + np.log(phi_pos(word))
+        else:
+            answer = answer + np.log(phi_neg(word))
+    """
     for word in all_words:
         if word in words:
             if pred == 1:
@@ -102,7 +115,9 @@ def getLogProb(line,pred):###P(line/y)
                 answer = answer + np.log( 1- phi_pos(word))
             else:
                 answer = answer + np.log( 1- phi_neg(word))
-        
+     """
+     
+            
     return answer
 
 
@@ -128,24 +143,22 @@ for (line,pred) in x_train:
     
 accuracy = correct/(len(x_train))
 """
-#testfilename = sys.argv[2]
-testfilename = 'testdata.csv'
-f = open(testfilename)
-lines = [cleanse_String(line) for line in f.readlines() ]
-lines = lines[1:]
-x_test = np.array(lines)
-f.close()
+testfilename = sys.argv[2]
+#testfilename = 'testdata.csv'
+x_test = pd.read_csv(testfilename,sep=',').values
 
-#outputfile = sys.argv[3]
-outputfile = 'output.txt'
+
+outputfile = sys.argv[3]
+#outputfile = 'output.txt'
 
 f = open(outputfile,'w+')
 count = 0
-for line in x_test:
+for i in range(len(x_test)):
+    line = x_test[i][0]
     f.write(str(predict(line)))
     f.write('\n')
     count = count + 1
-    print(count)
+    #print(count)
 f.close()
     
 """
