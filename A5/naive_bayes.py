@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 import pandas as pd
+import time
 def cleanse_String(line):
     line = line.strip()
     line =  line.replace('.',' ') 
@@ -21,8 +22,8 @@ def cleanse_String(line):
     return line
 
 
-trainfile = sys.argv[1]
-#trainfile = 'traindata.csv'
+#trainfile = sys.argv[1]
+trainfile = 'traindata.csv'
 
 x_train = pd.read_csv(trainfile,sep=',',dtype=str).values
 x_train = x_train[1:]
@@ -52,7 +53,7 @@ prob_pos = len(positive)/(len(positive) + len(negative))
 prob_neg = 1- prob_pos
 
 
-#all_words = {}
+all_words = {}
 pos_dict = {}
 
 for( line,pred ) in positive:
@@ -60,7 +61,7 @@ for( line,pred ) in positive:
     
     unique_words = np.unique(np.array(words))
     for word in unique_words:
-        #all_words[word] = 1
+        all_words[word] = 1
         if not(word in pos_dict):
             pos_dict[word] = 1
         else:
@@ -72,7 +73,7 @@ for( line,pred ) in negative:
     words = line.split()
     unique_words = np.unique(np.array(words))
     for word in unique_words:
-        #all_words[word]=1
+        all_words[word]=1
         if not(word in pos_dict):
             neg_dict[word] = 1
         else:
@@ -94,28 +95,42 @@ def phi_neg(word):
     return numerator/(num_neg +2)     
             
 
+phi_pos_sum = 0
+phi_neg_sum = 0
+
+phi_pos_complement_sum = 0
+phi_neg_complement_sum = 0
+for word in all_words:
+    phi_pos_sum = phi_pos_sum + np.log(phi_pos(word))
+    phi_pos_complement_sum = phi_pos_complement_sum + np.log ( 1- phi_pos(word))
+    
+    phi_neg_sum = phi_neg_sum + np.log(phi_neg(word))
+    phi_neg_complement_sum = phi_neg_complement_sum + np.log( 1- phi_neg(word))
+    
 def getLogProb(line,pred):###P(line/y)
     line = cleanse_String(line)
     words = line.split()
-    answer = 0.0
+    
+    """
     for word in words:
         if pred==1:
             answer = answer + np.log(phi_pos(word))
         else:
             answer = answer + np.log(phi_neg(word))
     """
-    for word in all_words:
+    
+    if pred == 1:
+        answer = phi_pos_complement_sum
+    else:
+        answer = phi_neg_complement_sum
+    
+    for word in words:
         if word in words:
             if pred == 1:
-                answer = answer + np.log(phi_pos(word))
+                answer = answer - np.log( 1- phi_pos(word)) + np.log(phi_pos(word))
             else:
-                answer = answer + np.log(phi_neg(word))
-        else:
-            if pred == 1:
-                answer = answer + np.log( 1- phi_pos(word))
-            else:
-                answer = answer + np.log( 1- phi_neg(word))
-     """
+                answer = answer - np.log(1-phi_neg(word)) + np.log(phi_neg(word))
+        
      
             
     return answer
@@ -130,8 +145,12 @@ def predict(line):
     else:
         return 0
     
-"""
+
 correct = 0
+count = 0
+
+
+begin = time.time()
 for (line,pred) in x_train:
     if pred=='positive':
         pred = 1
@@ -140,8 +159,14 @@ for (line,pred) in x_train:
     
     if predict(line) == pred:
         correct = correct + 1
+    count = count + 1
     
+    print(correct,count, correct/count)
 accuracy = correct/(len(x_train))
+end = time.time()
+
+print(end - begin)
+
 """
 testfilename = sys.argv[2]
 #testfilename = 'testdata.csv'
@@ -160,6 +185,8 @@ for i in range(len(x_test)):
     count = count + 1
     #print(count)
 f.close()
+"""
+
     
 """
 y^ = arg max p(x|y) * p(y)
