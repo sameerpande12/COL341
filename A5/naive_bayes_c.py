@@ -238,6 +238,7 @@ x_train = pd.read_csv(trainfile,sep=',',dtype=str).values
 
 for i in range(len(x_train)):
     x_train[i][0] = cleanse_String(x_train[i][0])
+# print("Read input file")    
 
 x_test = pd.read_csv(testfilename,sep=',').values
 
