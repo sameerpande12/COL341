@@ -22,8 +22,8 @@ def cleanse_String(line):
     return line
 
 
-#trainfile = sys.argv[1]
-trainfile = 'traindata.csv'
+trainfile = sys.argv[1]
+#trainfile = 'traindata.csv'
 
 x_train = pd.read_csv(trainfile,sep=',',dtype=str).values
 x_train = x_train[1:]
@@ -128,35 +128,14 @@ def predict(line):
         return 1
     else:
         return 0
-
-
-count = 0
-correct = 0
-for (line,pred) in x_train:
-    if pred == 'positive':
-        pred = 1
-    else:
-        pred = 0
     
-    value = predict(line)
-    if(pred == predict(line)):
-        correct = correct + 1
-    count = count + 1
-    
-    print(value,correct,count, correct/count)
-    
+testfilename = sys.argv[2]
 
-
-    
-#testfilename = sys.argv[2]
-testfilename = 'testdata.csv'
 x_test = pd.read_csv(testfilename,sep=',').values
 
 
+outputfile = sys.argv[3]
 
-
-#outputfile = sys.argv[3]
-outputfile = 'output.txt'
 f = open(outputfile,'w+')
 count = 0
 for i in range(len(x_test)):
