@@ -1,13 +1,24 @@
 import numpy as np
 import sys
 import pandas as pd
-#import time
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import time
+from nltk.stem import PorterStemmer
+import nltk
+
+
+
+
+stop_words = set(stopwords.words('english'))
+ps = PorterStemmer()
+
 def cleanse_String(line):
-    line = line.strip()
+    line = line.lower()
     line =  line.replace('.',' ') 
     line =  line.replace(',',' ') 
-    line =  line.replace('\\','') ##make sure don't replace "don\'t" by "dont"
-    line =  line.replace('\'','') 
+    line =  line.replace('\\','') ##make sure don't replace "don\'t" by "don't"
+    line =  line.replace('\'','')
     line =  line.replace('"',' ') 
     line =  line.replace('-',' ') 
     line =  line.replace('!',' ') 
@@ -19,27 +30,34 @@ def cleanse_String(line):
     line =  line.replace('=',' ') 
     line =  line.replace('/',' ')
     line =  line.replace('\n',' ')
+    
+    word_tokens = word_tokenize(line)
+    words_filtered = [ ps.stem(word) for word in word_tokens if not word in stop_words]
+    line = ''
+    for word in words_filtered:
+        line = line +word + ' '
+    
+    line.strip()
+    
     return line
 
 
 #trainfile = sys.argv[1]
 trainfile = 'traindata.csv'
+#testfilename = sys.argv[2]
+testfilename = 'testdata.csv'
+
+#outputfile = sys.argv[3]
+outputfile = 'output.txt'
+
+
 
 x_train = pd.read_csv(trainfile,sep=',',dtype=str).values
-x_train = x_train[1:]
 for i in range(len(x_train)):
     x_train[i][0] = cleanse_String(x_train[i][0])
+    
 
-#f = open(trainfile)
-#lines = [ line.strip() for line in f.readlines()]
-#lines = lines[1:]
-#lines = [ cleanse_String(line) for line in lines]
-
-
-#x_train=[]
-#for line in lines:
-#    x_train.append([line[1:-10],line[-8:]])
-#x_train = np.array(x_train)
+x_test = pd.read_csv(testfilename,sep=',').values
 
 positive = x_train[x_train[:,-1]=='positive']
 negative = x_train[x_train[:,-1]=='negative']
@@ -74,7 +92,7 @@ for( line,pred ) in negative:
     unique_words = np.unique(np.array(words))
     for word in unique_words:
         all_words[word]=1
-        if not(word in pos_dict):
+        if not(word in neg_dict):
             neg_dict[word] = 1
         else:
             neg_dict[word] = pos_dict[word] + 1
@@ -112,26 +130,6 @@ def getLogProb(line,pred):###P(line/y)
     words = line.split()
     words = np.unique(np.array(words))
     answer = 0.0
-    """
-    for word in words:
-        if pred==1:
-            answer = answer + np.log(phi_pos(word))
-        else:
-            answer = answer + np.log(phi_neg(word))
-    """
-    """
-    for word in all_words:
-        if word in words:
-            if pred == 1:
-                answer = answer + np.log(phi_pos(word))
-            else:
-                answer = answer + np.log(phi_neg(word))
-        else:
-            if pred == 1:
-                answer = answer + np.log( 1- phi_pos(word))
-            else:
-                answer = answer + np.log( 1- phi_neg(word))
-    """
     
     if pred==1:
         answer = phi_pos_complement_sum
@@ -147,6 +145,7 @@ def getLogProb(line,pred):###P(line/y)
 
 
 def predict(line):
+    line = cleanse_String(line)
     pos_measure = getLogProb(line,1) + np.log(prob_pos)
     neg_measure = getLogProb(line,0) + np.log(prob_neg)
     
@@ -154,12 +153,22 @@ def predict(line):
         return 1
     else:
         return 0
-    
+
+
+f = open(outputfile,'w+')
+count = 0
+for i in range(len(x_test)):
+    line = x_test[i][0]
+    f.write(str(predict(line)))
+    f.write('\n')
+    #count = count + 1
+    #print(count)
+f.close()
+
+
 """
 correct = 0
 count = 0
-
-
 begin = time.time()
 for (line,pred) in x_train:
     if pred=='positive':
@@ -174,28 +183,10 @@ for (line,pred) in x_train:
     print(correct,count, correct/count)
 accuracy = correct/(len(x_train))
 end = time.time()
-
 print(end - begin)
 """
 
 
-#testfilename = sys.argv[2]
-testfilename = 'testdata.csv'
-x_test = pd.read_csv(testfilename,sep=',').values
-
-
-#outputfile = sys.argv[3]
-outputfile = 'output.txt'
-
-f = open(outputfile,'w+')
-count = 0
-for i in range(len(x_test)):
-    line = x_test[i][0]
-    f.write(str(predict(line)))
-    f.write('\n')
-    count = count + 1
-    #print(count)
-f.close()
 
 
     
