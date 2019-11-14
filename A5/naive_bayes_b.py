@@ -1,17 +1,199 @@
 import numpy as np
 import sys
 import pandas as pd
+import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import time
 from nltk.stem import PorterStemmer
-import nltk
 
 
 
 
-stop_words = set(stopwords.words('english'))
+
+stop_words = {'a',
+ 'about',
+ 'above',
+ 'after',
+ 'again',
+ 'against',
+ 'ain',
+ 'all',
+ 'am',
+ 'an',
+ 'and',
+ 'any',
+ 'are',
+ 'aren',
+ "aren't",
+ 'as',
+ 'at',
+ 'be',
+ 'because',
+ 'been',
+ 'before',
+ 'being',
+ 'below',
+ 'between',
+ 'both',
+ 'but',
+ 'by',
+ 'can',
+ 'couldn',
+ "couldn't",
+ 'd',
+ 'did',
+ 'didn',
+ "didn't",
+ 'do',
+ 'does',
+ 'doesn',
+ "doesn't",
+ 'doing',
+ 'don',
+ "don't",
+ 'down',
+ 'during',
+ 'each',
+ 'few',
+ 'for',
+ 'from',
+ 'further',
+ 'had',
+ 'hadn',
+ "hadn't",
+ 'has',
+ 'hasn',
+ "hasn't",
+ 'have',
+ 'haven',
+ "haven't",
+ 'having',
+ 'he',
+ 'her',
+ 'here',
+ 'hers',
+ 'herself',
+ 'him',
+ 'himself',
+ 'his',
+ 'how',
+ 'i',
+ 'if',
+ 'in',
+ 'into',
+ 'is',
+ 'isn',
+ "isn't",
+ 'it',
+ "it's",
+ 'its',
+ 'itself',
+ 'just',
+ 'll',
+ 'm',
+ 'ma',
+ 'me',
+ 'mightn',
+ "mightn't",
+ 'more',
+ 'most',
+ 'mustn',
+ "mustn't",
+ 'my',
+ 'myself',
+ 'needn',
+ "needn't",
+ 'no',
+ 'nor',
+ 'not',
+ 'now',
+ 'o',
+ 'of',
+ 'off',
+ 'on',
+ 'once',
+ 'only',
+ 'or',
+ 'other',
+ 'our',
+ 'ours',
+ 'ourselves',
+ 'out',
+ 'over',
+ 'own',
+ 're',
+ 's',
+ 'same',
+ 'shan',
+ "shan't",
+ 'she',
+ "she's",
+ 'should',
+ "should've",
+ 'shouldn',
+ "shouldn't",
+ 'so',
+ 'some',
+ 'such',
+ 't',
+ 'than',
+ 'that',
+ "that'll",
+ 'the',
+ 'their',
+ 'theirs',
+ 'them',
+ 'themselves',
+ 'then',
+ 'there',
+ 'these',
+ 'they',
+ 'this',
+ 'those',
+ 'through',
+ 'to',
+ 'too',
+ 'under',
+ 'until',
+ 'up',
+ 've',
+ 'very',
+ 'was',
+ 'wasn',
+ "wasn't",
+ 'we',
+ 'were',
+ 'weren',
+ "weren't",
+ 'what',
+ 'when',
+ 'where',
+ 'which',
+ 'while',
+ 'who',
+ 'whom',
+ 'why',
+ 'will',
+ 'with',
+ 'won',
+ "won't",
+ 'wouldn',
+ "wouldn't",
+ 'y',
+ 'you',
+ "you'd",
+ "you'll",
+ "you're",
+ "you've",
+ 'your',
+ 'yours',
+ 'yourself',
+ 'yourselves'}
+ 
+
 ps = PorterStemmer()
+
 
 def cleanse_String(line):
     line = line.lower()
@@ -31,7 +213,7 @@ def cleanse_String(line):
     line =  line.replace('/',' ')
     line =  line.replace('\n',' ')
     
-    word_tokens = word_tokenize(line)
+    word_tokens = line.split()
     words_filtered = [ ps.stem(word) for word in word_tokens if not word in stop_words]
     line = ''
     for word in words_filtered:
@@ -42,22 +224,21 @@ def cleanse_String(line):
     return line
 
 
-#trainfile = sys.argv[1]
-trainfile = 'traindata.csv'
-#testfilename = sys.argv[2]
-testfilename = 'testdata.csv'
+trainfile = sys.argv[1]
+testfilename = sys.argv[2]
+outputfile = sys.argv[3]
 
-#outputfile = sys.argv[3]
-outputfile = 'output.txt'
 
 
 
 x_train = pd.read_csv(trainfile,sep=',',dtype=str).values
+x_train = x_train[1:]
 for i in range(len(x_train)):
     x_train[i][0] = cleanse_String(x_train[i][0])
     
 
 x_test = pd.read_csv(testfilename,sep=',').values
+
 
 positive = x_train[x_train[:,-1]=='positive']
 negative = x_train[x_train[:,-1]=='negative']
@@ -95,7 +276,7 @@ for( line,pred ) in negative:
         if not(word in neg_dict):
             neg_dict[word] = 1
         else:
-            neg_dict[word] = pos_dict[word] + 1
+            neg_dict[word] = neg_dict[word] + 1
             
     
 def phi_pos(word): ## give p(word|y=1)
@@ -111,20 +292,7 @@ def phi_neg(word):
         numerator = 1 + neg_dict[word]
         
     return numerator/(num_neg +2)     
-            
 
-phi_pos_sum = 0
-phi_neg_sum = 0
-
-phi_pos_complement_sum = 0
-phi_neg_complement_sum = 0
-for word in all_words:
-    phi_pos_sum = phi_pos_sum + np.log(phi_pos(word))
-    phi_pos_complement_sum = phi_pos_complement_sum + np.log ( 1- phi_pos(word))
-    
-    phi_neg_sum = phi_neg_sum + np.log(phi_neg(word))
-    phi_neg_complement_sum = phi_neg_complement_sum + np.log( 1- phi_neg(word))
-    
 def getLogProb(line,pred):###P(line/y)
     line = cleanse_String(line)
     words = line.split()
@@ -155,51 +323,35 @@ def predict(line):
         return 0
 
 
+            
+
+phi_pos_sum = 0
+phi_neg_sum = 0
+
+phi_pos_complement_sum = 0
+phi_neg_complement_sum = 0
+
+
+for word in all_words:
+    phi_pos_sum = phi_pos_sum + np.log(phi_pos(word))
+    phi_pos_complement_sum = phi_pos_complement_sum + np.log ( 1- phi_pos(word))
+    
+    phi_neg_sum = phi_neg_sum + np.log(phi_neg(word))
+    phi_neg_complement_sum = phi_neg_complement_sum + np.log( 1- phi_neg(word))
+    
+
+
+
+
+
+
 f = open(outputfile,'w+')
 count = 0
 for i in range(len(x_test)):
     line = x_test[i][0]
     f.write(str(predict(line)))
     f.write('\n')
-    #count = count + 1
-    #print(count)
+    # count = count + 1
+    # print(count)
 f.close()
 
-
-"""
-correct = 0
-count = 0
-begin = time.time()
-for (line,pred) in x_train:
-    if pred=='positive':
-        pred = 1
-    else:
-        pred = 0
-    
-    if predict(line) == pred:
-        correct = correct + 1
-    count = count + 1
-    
-    print(correct,count, correct/count)
-accuracy = correct/(len(x_train))
-end = time.time()
-print(end - begin)
-"""
-
-
-
-
-    
-"""
-y^ = arg max p(x|y) * p(y)
-y^ = arg max log(p(x|y)) + log(p(y))
-
-to measure p(x|y)
-- we need two functions : p(x|y=1) and p(x|y=0)
-
-assume for now x is just one word
-p(x|y=1) = # file containing x and are positive / # files which are positive
-
-pos_dict[x] will give number of files containing x and y=1
-neg_dict[x] will give number of files containing x and y = 0
-"""
