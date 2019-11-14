@@ -50,8 +50,8 @@ pos_word_count = 0
 for( line,pred ) in positive:
     words = line.split()
     pos_word_count = pos_word_count + len(words)
-    unique_words = np.unique(np.array(words))
-    for word in unique_words:
+    #unique_words = np.unique(np.array(words))
+    for word in words:
 
         all_words[word] = 1
         if not(word in pos_dict):
